@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0f">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Ficha de Treino</title>
+  <link rel="icon" href="/assets/images/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════
+     BLOQUEIO DESKTOP
+     ═══════════════════════════════════════════════════════ -->
+<div class="desktop-block">
+  <h1>Este app é exclusivo para dispositivos móveis 📱</h1>
+  <p>Acesse pelo seu smartphone para a melhor experiência.</p>
+  <img src="/assets/images/treino-ideal.png" alt="Use o celular">
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     APP SHELL (autenticado)
+     ═══════════════════════════════════════════════════════ -->
+<div class="mobile-app app-shell hidden" id="app-shell">
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <span class="header-brand">Ficha de Treino</span>
+
+    <div class="header-right">
+      <div class="header-avatar" id="header-avatar">?</div>
+      <button class="btn-menu" id="btn-menu" aria-label="Menu">
+        <span>☰</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- DROPDOWN MENU -->
+  <div class="nav-dropdown" id="nav-dropdown" role="menu">
+    <div class="nav-section-label">Navegação</div>
+
+    <div class="nav-item" data-page="home" role="menuitem">
+      <span class="nav-icon">🏠</span> Início
+    </div>
+    <div class="nav-item" data-page="nutricao" role="menuitem">
+      <span class="nav-icon">🥗</span> Nutrição
+    </div>
+    <div class="nav-item" data-page="perfil" role="menuitem">
+      <span class="nav-icon">👤</span> Perfil
+    </div>
+
+    <div class="nav-divider"></div>
+
+    <div class="nav-logout" id="btn-logout-menu" role="menuitem">
+      <span class="nav-icon">🚪</span> Sair
+    </div>
+  </div>
+
+  <!-- CONTEÚDO DINÂMICO -->
+  <main class="app-main" id="app-main">
+    <div class="spinner"></div>
+  </main>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav" aria-label="Navegação principal">
+    <button class="bottom-nav-item active" data-page="home">
+      <span class="nav-icon">🏠</span>
+      Início
+    </button>
+    <button class="bottom-nav-item" data-page="treinos">
+      <span class="nav-icon">💪</span>
+      Treinos
+    </button>
+    <button class="bottom-nav-item" data-page="nutricao">
+      <span class="nav-icon">🥗</span>
+      Nutrição
+    </button>
+    <button class="bottom-nav-item" data-page="perfil">
+      <span class="nav-icon">👤</span>
+      Perfil
+    </button>
+  </nav>
+
+</div><!-- /app-shell -->
+
+<!-- ═══════════════════════════════════════════════════════
+     LOGIN REDIRECT (não autenticado)
+     ═══════════════════════════════════════════════════════ -->
+<div class="mobile-app login-page hidden" id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="brand">Ficha de Treino</div>
+      <p>Seus treinos, sempre na palma da mão</p>
+    </div>
+    <div style="text-align:center;padding:20px 0;color:var(--text-muted)">
+      <div class="spinner" style="margin:0 auto 16px"></div>
+      Verificando acesso...
+    </div>
+    <a href="/login.html" style="display:block;text-align:center;padding:14px;background:var(--grad-brand);border-radius:var(--radius-md);color:#fff;font-weight:700;font-size:15px">
+      Ir para o Login
+    </a>
+  </div>
+</div>
+
+<!-- Toast de notificações -->
+<div class="toast" id="toast"></div>
+
+<!-- Scripts -->
+<script type="module">
+  // ─── Guard de autenticação ──────────────────────────────
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  // ⚠️  As mesmas credenciais do login.html
+  const firebaseConfig = {
+    apiKey:            "AIzaSyDldCAsRyzMoZ3UJHaqpO-o_jdE_hWF5Cw",
+    authDomain:        "ficha-de-treino-ba542.firebaseapp.com",
+    projectId:         "ficha-de-treino-ba542",
+    storageBucket:     "ficha-de-treino-ba542.firebasestorage.app",
+    messagingSenderId: "1725577428",
+    appId:             "1:1725577428:web:eace2780d5ce3ca669a341"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  onAuthStateChanged(auth, user => {
+    if (!user) {
+      // Não logado → vai para login
+      window.location.href = '/login.html';
+    }
+    // Se logado, app.js assume o controle
+  });
+</script>
+<script type="module" src="/assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,980 @@
+/* ============================================================
+   FICHA DE TREINO — Design System
+   Paleta: Dark premium com gradiente roxo→âmbar→dourado
+   Tipografia: Inter (body) + Bebas Neue (display)
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Bebas+Neue&display=swap');
+
+/* ── TOKENS ─────────────────────────────────────────────── */
+:root {
+  --bg:           #0a0a0f;
+  --surface:      #13131a;
+  --surface2:     #1c1c28;
+  --border:       rgba(255,255,255,0.08);
+  --border-gold:  rgba(247,207,73,0.35);
+
+  --purple:       #7c3aed;
+  --purple-light: #a78bfa;
+  --amber:        #8f6415;
+  --gold:         #f7cf49;
+  --gold-light:   #fde68a;
+
+  --grad-brand:   linear-gradient(135deg, #351a41 0%, #8f6415 55%, #f7cf49 100%);
+  --grad-subtle:  linear-gradient(135deg, rgba(53,26,65,.6) 0%, rgba(143,100,21,.4) 60%, rgba(247,207,73,.2) 100%);
+  --grad-card:    linear-gradient(145deg, rgba(255,255,255,.05) 0%, rgba(255,255,255,.02) 100%);
+
+  --text-primary:   #f5f5f7;
+  --text-secondary: #a0a0b0;
+  --text-muted:     #606070;
+
+  --radius-sm:  8px;
+  --radius-md:  14px;
+  --radius-lg:  20px;
+  --radius-xl:  28px;
+
+  --shadow-sm:  0 2px 8px rgba(0,0,0,.4);
+  --shadow-md:  0 4px 20px rgba(0,0,0,.5);
+  --shadow-lg:  0 8px 40px rgba(0,0,0,.6);
+  --shadow-gold:0 0 24px rgba(247,207,73,.15);
+
+  --header-h:   60px;
+  --footer-h:   56px;
+
+  --transition: .2s cubic-bezier(.4,0,.2,1);
+}
+
+/* ── RESET ──────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { -webkit-tap-highlight-color: transparent; scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  min-height: 100dvh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; border: none; background: none; font-family: inherit; }
+img { display: block; max-width: 100%; }
+ul { list-style: none; }
+
+/* ── DESKTOP BLOQUEIO ───────────────────────────────────── */
+.desktop-block {
+  display: none;
+  place-items: center;
+  min-height: 100dvh;
+  flex-direction: column;
+  gap: 24px;
+  padding: 40px;
+  text-align: center;
+}
+.desktop-block h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(28px, 4vw, 48px);
+  letter-spacing: .04em;
+  color: var(--gold);
+  line-height: 1.2;
+}
+.desktop-block p { color: var(--text-secondary); font-size: 18px; }
+.desktop-block img { width: min(400px, 60vw); opacity: .8; }
+
+@media (min-width: 1025px) {
+  .desktop-block { display: grid; }
+  .mobile-app    { display: none !important; }
+}
+
+/* ══════════════════════════════════════════════════════════
+   LOGIN PAGE
+   ══════════════════════════════════════════════════════════ */
+.login-page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 20px;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+
+/* fundo decorativo */
+.login-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(124,58,237,.25) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 80% 110%,  rgba(247,207,73,.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--grad-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 36px 28px;
+  backdrop-filter: blur(20px);
+  position: relative;
+  z-index: 1;
+  box-shadow: var(--shadow-lg);
+}
+
+.login-logo {
+  text-align: center;
+  margin-bottom: 32px;
+}
+.login-logo .brand {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 38px;
+  letter-spacing: .06em;
+  background: var(--grad-brand);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+}
+.login-logo p {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+/* abas login / cadastro */
+.login-tabs {
+  display: flex;
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  padding: 4px;
+  margin-bottom: 24px;
+  gap: 4px;
+}
+.login-tab {
+  flex: 1;
+  padding: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 10px;
+  color: var(--text-muted);
+  transition: var(--transition);
+  text-align: center;
+}
+.login-tab.active {
+  background: var(--surface2);
+  color: var(--gold);
+  box-shadow: var(--shadow-sm);
+}
+
+/* formulário */
+.login-form { display: flex; flex-direction: column; gap: 14px; }
+
+.field-group { display: flex; flex-direction: column; gap: 6px; }
+.field-group label { font-size: 12px; font-weight: 600; color: var(--text-secondary); letter-spacing: .05em; text-transform: uppercase; }
+
+.field-group input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 13px 14px;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-family: inherit;
+  transition: var(--transition);
+  outline: none;
+  -webkit-appearance: none;
+}
+.field-group input:focus { border-color: rgba(247,207,73,.5); box-shadow: 0 0 0 3px rgba(247,207,73,.08); }
+.field-group input::placeholder { color: var(--text-muted); }
+
+.btn-primary {
+  background: var(--grad-brand);
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  letter-spacing: .02em;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-gold);
+}
+.btn-primary:hover { opacity: .9; transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); opacity: 1; }
+.btn-primary:disabled { opacity: .5; pointer-events: none; }
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 12px;
+  margin: 4px 0;
+}
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.btn-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 13px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  transition: var(--transition);
+}
+.btn-google:hover { background: var(--surface2); border-color: rgba(255,255,255,.15); }
+.btn-google svg { flex-shrink: 0; }
+
+.login-error {
+  background: rgba(220,38,38,.12);
+  border: 1px solid rgba(220,38,38,.3);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #f87171;
+  display: none;
+}
+.login-error.show { display: block; }
+
+/* ══════════════════════════════════════════════════════════
+   SHELL (APP AUTENTICADO)
+   ══════════════════════════════════════════════════════════ */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  padding-bottom: var(--footer-h);
+}
+
+/* ── HEADER ─────────────────────────────────────────────── */
+.app-header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--header-h);
+  background: rgba(10,10,15,.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-gold);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 900;
+}
+
+.header-brand {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: .06em;
+  background: var(--grad-brand);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-avatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: var(--grad-brand);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: #fff;
+  overflow: hidden;
+  border: 2px solid rgba(247,207,73,.3);
+  flex-shrink: 0;
+}
+.header-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.btn-menu {
+  width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  transition: var(--transition);
+  font-size: 22px;
+}
+.btn-menu:hover { background: var(--surface); color: var(--text-primary); }
+
+/* ── DROPDOWN MENU ──────────────────────────────────────── */
+.nav-dropdown {
+  position: fixed;
+  top: calc(var(--header-h) + 6px);
+  right: 12px;
+  width: 220px;
+  background: var(--surface2);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 850;
+  overflow: hidden;
+  transform-origin: top right;
+  transform: scale(.92) translateY(-8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform .2s cubic-bezier(.34,1.56,.64,1), opacity .15s ease;
+}
+.nav-dropdown.open {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+  pointer-events: all;
+}
+
+.nav-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 14px 16px 6px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: var(--transition);
+  cursor: pointer;
+}
+.nav-item:hover { background: rgba(255,255,255,.05); color: var(--text-primary); }
+.nav-item.active { color: var(--gold); }
+.nav-item .nav-icon { font-size: 18px; width: 22px; text-align: center; }
+
+.nav-divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+.nav-logout {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 16px;
+  font-size: 14px; font-weight: 500;
+  color: #f87171;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.nav-logout:hover { background: rgba(248,113,113,.08); }
+
+/* ── MAIN CONTENT ────────────────────────────────────────── */
+.app-main {
+  padding-top: var(--header-h);
+  flex: 1;
+}
+
+/* ── HERO BANNER ─────────────────────────────────────────── */
+.hero-banner {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+}
+.hero-banner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+.hero-banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 30%, var(--bg) 100%);
+}
+
+/* ── PÁGINA HOME ─────────────────────────────────────────── */
+.home-greeting {
+  padding: 20px 16px 8px;
+}
+.home-greeting .label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.home-greeting h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 32px;
+  letter-spacing: .04em;
+  color: var(--text-primary);
+  line-height: 1.1;
+  margin-top: 2px;
+}
+.home-greeting h1 span { color: var(--gold); }
+
+.section-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
+  letter-spacing: .06em;
+  color: var(--text-secondary);
+  padding: 20px 16px 10px;
+}
+
+/* cards dos treinos na home */
+.treino-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 16px;
+}
+
+.treino-card {
+  background: var(--grad-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+.treino-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--card-color, var(--grad-brand));
+}
+.treino-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.treino-card:active { transform: translateY(0); }
+
+.treino-card-icon { font-size: 28px; margin-bottom: 8px; }
+.treino-card-letra {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 42px;
+  letter-spacing: .02em;
+  color: var(--text-primary);
+  line-height: 1;
+}
+.treino-card-nome {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-top: 4px;
+}
+.treino-card-dia {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ── TABELA SEMANAL ─────────────────────────────────────── */
+.schedule-section { padding: 0 16px 16px; }
+
+.schedule-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.schedule-table thead th {
+  background: var(--grad-brand);
+  color: #fff;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  text-align: left;
+}
+
+.schedule-table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: var(--transition);
+}
+.schedule-table tbody tr:last-child { border-bottom: none; }
+.schedule-table tbody tr:hover { background: rgba(255,255,255,.03); }
+
+.schedule-table td {
+  padding: 11px 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  vertical-align: middle;
+}
+.schedule-table td:first-child { color: var(--gold); font-weight: 600; }
+
+/* ── PÁGINA TREINO ──────────────────────────────────────── */
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 16px 12px;
+}
+.btn-back {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-secondary);
+  font-size: 18px;
+  flex-shrink: 0;
+  transition: var(--transition);
+}
+.btn-back:hover { border-color: rgba(255,255,255,.2); color: var(--text-primary); }
+
+.page-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  letter-spacing: .04em;
+  line-height: 1;
+}
+.page-badge {
+  display: inline-block;
+  background: var(--grad-subtle);
+  border: 1px solid var(--border-gold);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gold-light);
+  letter-spacing: .04em;
+  margin-top: 4px;
+}
+
+/* lista de exercícios */
+.exercicios-list {
+  padding: 0 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.exercicio-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 8px;
+  transition: var(--transition);
+}
+
+.exercicio-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  cursor: pointer;
+}
+
+.exercicio-thumb {
+  width: 80px;
+  height: 60px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--surface2);
+  /* lazy load via CSS */
+}
+
+.exercicio-info { flex: 1; min-width: 0; }
+.exercicio-nome {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.exercicio-series {
+  font-size: 12px;
+  color: var(--gold);
+  font-weight: 600;
+  margin-top: 3px;
+}
+.exercicio-musculos {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.exercicio-chevron {
+  color: var(--text-muted);
+  font-size: 16px;
+  transition: transform var(--transition);
+  flex-shrink: 0;
+}
+.exercicio-item.expanded .exercicio-chevron { transform: rotate(90deg); }
+
+/* painel expandido */
+.exercicio-detail {
+  display: none;
+  padding: 0 12px 14px;
+  border-top: 1px solid var(--border);
+}
+.exercicio-item.expanded .exercicio-detail { display: block; }
+
+.detail-gif {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  margin: 12px 0;
+  background: var(--surface2);
+}
+
+.dicas-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+
+.dicas-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.dica-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+.dica-item::before {
+  content: '→';
+  color: var(--gold);
+  flex-shrink: 0;
+  font-size: 12px;
+  margin-top: 1px;
+}
+
+/* marcadores de série */
+.series-tracker {
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  border: 1px solid var(--border);
+}
+.series-tracker-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+.series-dots {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.serie-dot {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+}
+.serie-dot.done {
+  background: var(--grad-brand);
+  border-color: var(--gold);
+  color: #fff;
+}
+.rest-timer {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gold);
+  min-width: 60px;
+}
+
+/* ── NUTRIÇÃO ────────────────────────────────────────────── */
+.nutri-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 16px 16px 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.nutri-tabs::-webkit-scrollbar { display: none; }
+
+.nutri-tab {
+  flex-shrink: 0;
+  padding: 7px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--surface);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.nutri-tab.active {
+  background: var(--grad-brand);
+  color: #fff;
+  border-color: transparent;
+}
+
+.nutri-content { padding: 0 16px 24px; }
+
+/* cartão de suplemento */
+.suplem-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  margin-bottom: 8px;
+}
+.suplem-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.suplem-nome { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+.suplem-qty {
+  background: var(--grad-subtle);
+  border: 1px solid var(--border-gold);
+  border-radius: 12px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gold-light);
+}
+.suplem-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 6px;
+}
+.suplem-meta { font-size: 12px; color: var(--text-muted); }
+.suplem-meta strong { color: var(--text-secondary); }
+.suplem-obs {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+
+/* refeições da dieta */
+.meal-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  margin-bottom: 8px;
+  display: flex;
+  gap: 12px;
+}
+.meal-time {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  letter-spacing: .04em;
+  color: var(--gold);
+  min-width: 64px;
+  flex-shrink: 0;
+  line-height: 1.2;
+}
+.meal-info { flex: 1; }
+.meal-nome { font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
+.meal-opcao {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 2px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.meal-opcao::before { content: '•'; color: var(--gold); }
+
+/* ── BOTTOM NAV ─────────────────────────────────────────── */
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: var(--footer-h);
+  background: rgba(10,10,15,.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border-gold);
+  display: flex;
+  z-index: 900;
+}
+
+.bottom-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  border: none;
+  background: none;
+  padding: 0;
+}
+.bottom-nav-item .nav-icon { font-size: 20px; line-height: 1; }
+.bottom-nav-item.active { color: var(--gold); }
+
+/* ── PERFIL ─────────────────────────────────────────────── */
+.profile-page { padding: 20px 16px 24px; }
+
+.profile-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 0;
+}
+.profile-avatar {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: var(--grad-brand);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px;
+  font-weight: 700;
+  color: #fff;
+  border: 3px solid var(--border-gold);
+  overflow: hidden;
+  box-shadow: var(--shadow-gold);
+}
+.profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.profile-name { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: .04em; }
+.profile-email { font-size: 13px; color: var(--text-muted); }
+
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 16px 0;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 10px;
+  text-align: center;
+}
+.stat-value { font-family: 'Bebas Neue', sans-serif; font-size: 30px; color: var(--gold); letter-spacing: .04em; }
+.stat-label { font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
+
+.profile-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 20px 0 10px;
+}
+
+.profile-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.profile-option:hover { border-color: rgba(255,255,255,.15); }
+.profile-option-left { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text-secondary); }
+.profile-option-icon { font-size: 18px; }
+
+.btn-logout {
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  background: rgba(220,38,38,.1);
+  border: 1px solid rgba(220,38,38,.25);
+  color: #f87171;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  margin-top: 16px;
+  transition: var(--transition);
+}
+.btn-logout:hover { background: rgba(220,38,38,.15); }
+
+/* ── UTILS ──────────────────────────────────────────────── */
+.hidden { display: none !important; }
+
+.toast {
+  position: fixed;
+  bottom: calc(var(--footer-h) + 12px);
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--surface2);
+  border: 1px solid var(--border-gold);
+  border-radius: 24px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gold-light);
+  z-index: 9999;
+  opacity: 0;
+  transition: all .3s cubic-bezier(.34,1.56,.64,1);
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: var(--shadow-md);
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* loading spinner */
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+  margin: 60px auto;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* animação de entrada das páginas */
+.page-enter {
+  animation: pageIn .25s ease forwards;
+}
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

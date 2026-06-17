@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0f">
+  <title>Ficha de Treino — Entrar</title>
+  <link rel="icon" href="/assets/images/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <style>
+    /* Estilos exclusivos desta página */
+    body { padding: 0; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════
+     BLOCO DESKTOP
+     ═══════════════════════════════════════════════════════ -->
+<div class="desktop-block">
+  <h1>Este app é exclusivo para dispositivos móveis 📱</h1>
+  <p>Acesse pelo seu smartphone para a melhor experiência.</p>
+  <img src="/assets/images/treino-ideal.png" alt="Use o celular">
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     TELA DE LOGIN (mobile)
+     ═══════════════════════════════════════════════════════ -->
+<div class="mobile-app login-page" id="login-page">
+
+  <div class="login-card">
+
+    <!-- Logo -->
+    <div class="login-logo">
+      <div class="brand">Ficha de Treino</div>
+      <p>Seus treinos, sempre na palma da mão</p>
+    </div>
+
+    <!-- Abas -->
+    <div class="login-tabs">
+      <div class="login-tab active" id="tab-entrar" role="button">Entrar</div>
+      <div class="login-tab"       id="tab-cadastrar" role="button">Cadastrar</div>
+    </div>
+
+    <!-- Erro -->
+    <div class="login-error" id="login-error"></div>
+
+    <!-- Formulário Entrar -->
+    <div id="form-entrar">
+      <div class="login-form">
+        <div class="field-group">
+          <label for="email-login">E-mail</label>
+          <input type="email" id="email-login" placeholder="seu@email.com" autocomplete="email">
+        </div>
+        <div class="field-group">
+          <label for="senha-login">Senha</label>
+          <input type="password" id="senha-login" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button class="btn-primary" id="btn-entrar">Entrar</button>
+
+        <div class="divider">ou</div>
+
+        <button class="btn-google" id="btn-google-login">
+          <!-- Google icon SVG -->
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z" fill="#4285F4"/>
+            <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z" fill="#34A853"/>
+            <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z" fill="#FBBC05"/>
+            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58Z" fill="#EA4335"/>
+          </svg>
+          Continuar com Google
+        </button>
+      </div>
+    </div>
+
+    <!-- Formulário Cadastrar -->
+    <div id="form-cadastrar" style="display:none">
+      <div class="login-form">
+        <div class="field-group">
+          <label for="nome-cadastro">Nome</label>
+          <input type="text" id="nome-cadastro" placeholder="Seu nome" autocomplete="name">
+        </div>
+        <div class="field-group">
+          <label for="email-cadastro">E-mail</label>
+          <input type="email" id="email-cadastro" placeholder="seu@email.com" autocomplete="email">
+        </div>
+        <div class="field-group">
+          <label for="senha-cadastro">Senha</label>
+          <input type="password" id="senha-cadastro" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+        </div>
+        <button class="btn-primary" id="btn-cadastrar">Criar conta</button>
+
+        <div class="divider">ou</div>
+
+        <button class="btn-google" id="btn-google-cadastro">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z" fill="#4285F4"/>
+            <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z" fill="#34A853"/>
+            <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z" fill="#FBBC05"/>
+            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58Z" fill="#EA4335"/>
+          </svg>
+          Cadastrar com Google
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /login-card -->
+</div><!-- /login-page -->
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getAuth, GoogleAuthProvider, signInWithPopup,
+    signInWithEmailAndPassword, createUserWithEmailAndPassword,
+    onAuthStateChanged, updateProfile
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  // ⚠️  Cole aqui as credenciais do seu projeto Firebase
+  //     Console → Configurações do projeto → Seus aplicativos → Web
+  const firebaseConfig = {
+    apiKey:            "AIzaSyDldCAsRyzMoZ3UJHaqpO-o_jdE_hWF5Cw",
+    authDomain:        "ficha-de-treino-ba542.firebaseapp.com",
+    projectId:         "ficha-de-treino-ba542",
+    storageBucket:     "ficha-de-treino-ba542.firebasestorage.app",
+    messagingSenderId: "1725577428",
+    appId:             "1:1725577428:web:eace2780d5ce3ca669a341"
+  };
+
+  const app      = initializeApp(firebaseConfig);
+  const auth     = getAuth(app);
+  const provider = new GoogleAuthProvider();
+
+  // ── Redireciona se já logado ──────────────────────────────
+  onAuthStateChanged(auth, user => {
+    if (user) window.location.href = '/index.html';
+  });
+
+  // ── Helpers ───────────────────────────────────────────────
+  const errorEl   = document.getElementById('login-error');
+  const tabEntrar = document.getElementById('tab-entrar');
+  const tabCadast = document.getElementById('tab-cadastrar');
+  const formEntr  = document.getElementById('form-entrar');
+  const formCad   = document.getElementById('form-cadastrar');
+
+  function showError(msg) {
+    errorEl.textContent = msg;
+    errorEl.classList.add('show');
+  }
+  function hideError() { errorEl.classList.remove('show'); }
+
+  function setLoading(btn, loading) {
+    btn.disabled = loading;
+    btn.textContent = loading ? 'Aguarde...' : btn.dataset.label;
+  }
+
+  // salva label original
+  document.querySelectorAll('.btn-primary').forEach(b => {
+    b.dataset.label = b.textContent;
+  });
+
+  // ── Trocar abas ───────────────────────────────────────────
+  tabEntrar.addEventListener('click', () => {
+    tabEntrar.classList.add('active');
+    tabCadast.classList.remove('active');
+    formEntr.style.display = 'block';
+    formCad.style.display  = 'none';
+    hideError();
+  });
+  tabCadast.addEventListener('click', () => {
+    tabCadast.classList.add('active');
+    tabEntrar.classList.remove('active');
+    formCad.style.display  = 'block';
+    formEntr.style.display = 'none';
+    hideError();
+  });
+
+  // ── Enter no campo ────────────────────────────────────────
+  document.getElementById('senha-login').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('btn-entrar').click();
+  });
+  document.getElementById('senha-cadastro').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('btn-cadastrar').click();
+  });
+
+  // ── Login com e-mail ──────────────────────────────────────
+  document.getElementById('btn-entrar').addEventListener('click', async () => {
+    hideError();
+    const email = document.getElementById('email-login').value.trim();
+    const senha = document.getElementById('senha-login').value;
+    if (!email || !senha) return showError('Preencha e-mail e senha.');
+    const btn = document.getElementById('btn-entrar');
+    setLoading(btn, true);
+    try {
+      await signInWithEmailAndPassword(auth, email, senha);
+      // onAuthStateChanged vai redirecionar
+    } catch (e) {
+      setLoading(btn, false);
+      showError(friendlyError(e.code));
+    }
+  });
+
+  // ── Cadastro ──────────────────────────────────────────────
+  document.getElementById('btn-cadastrar').addEventListener('click', async () => {
+    hideError();
+    const nome  = document.getElementById('nome-cadastro').value.trim();
+    const email = document.getElementById('email-cadastro').value.trim();
+    const senha = document.getElementById('senha-cadastro').value;
+    if (!nome || !email || !senha) return showError('Preencha todos os campos.');
+    if (senha.length < 6) return showError('Senha deve ter ao menos 6 caracteres.');
+    const btn = document.getElementById('btn-cadastrar');
+    setLoading(btn, true);
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, senha);
+      await updateProfile(cred.user, { displayName: nome });
+      // onAuthStateChanged vai redirecionar
+    } catch (e) {
+      setLoading(btn, false);
+      showError(friendlyError(e.code));
+    }
+  });
+
+  // ── Login com Google ──────────────────────────────────────
+  async function loginGoogle() {
+    hideError();
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (e) {
+      if (e.code !== 'auth/popup-closed-by-user') showError(friendlyError(e.code));
+    }
+  }
+  document.getElementById('btn-google-login').addEventListener('click',   loginGoogle);
+  document.getElementById('btn-google-cadastro').addEventListener('click', loginGoogle);
+
+  // ── Erros amigáveis ───────────────────────────────────────
+  function friendlyError(code) {
+    const map = {
+      'auth/user-not-found':       'Nenhuma conta com esse e-mail.',
+      'auth/wrong-password':       'Senha incorreta.',
+      'auth/invalid-email':        'E-mail inválido.',
+      'auth/email-already-in-use': 'E-mail já cadastrado. Tente entrar.',
+      'auth/weak-password':        'Senha muito fraca (mínimo 6 caracteres).',
+      'auth/too-many-requests':    'Muitas tentativas. Aguarde alguns minutos.',
+      'auth/network-request-failed': 'Sem conexão. Verifique sua internet.',
+      'auth/invalid-credential':   'E-mail ou senha incorretos.',
+    };
+    return map[code] || `Erro: ${code}`;
+  }
+</script>
+</body>
+</html>
