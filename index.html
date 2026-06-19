@@ -91,18 +91,12 @@
      LOGIN REDIRECT (não autenticado)
      ═══════════════════════════════════════════════════════ -->
 <div class="mobile-app login-page hidden" id="login-screen">
-  <div class="login-card">
+  <div class="login-card" style="text-align:center">
     <div class="login-logo">
       <div class="brand">Ficha de Treino</div>
-      <p>Seus treinos, sempre na palma da mão</p>
     </div>
-    <div style="text-align:center;padding:20px 0;color:var(--text-muted)">
-      <div class="spinner" style="margin:0 auto 16px"></div>
-      Verificando acesso...
-    </div>
-    <a href="/login.html" style="display:block;text-align:center;padding:14px;background:var(--grad-brand);border-radius:var(--radius-md);color:#fff;font-weight:700;font-size:15px">
-      Ir para o Login
-    </a>
+    <div class="spinner"></div>
+    <p style="color:var(--text-muted);margin-top:8px">Verificando acesso...</p>
   </div>
 </div>
 
@@ -113,10 +107,9 @@
 <script type="module">
   // ─── Guard de autenticação ──────────────────────────────
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, onAuthStateChanged }
-    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  // ⚠️  As mesmas credenciais do login.html
   const firebaseConfig = {
     apiKey:            "AIzaSyDldCAsRyzMoZ3UJHaqpO-o_jdE_hWF5Cw",
     authDomain:        "ficha-de-treino-ba542.firebaseapp.com",
@@ -128,13 +121,22 @@
 
   const app  = initializeApp(firebaseConfig);
   const auth = getAuth(app);
+  const db   = getFirestore(app);
 
-  onAuthStateChanged(auth, user => {
+  onAuthStateChanged(auth, async user => {
     if (!user) {
-      // Não logado → vai para login
       window.location.href = '/login.html';
+      return;
     }
-    // Se logado, app.js assume o controle
+    try {
+      const snap = await getDoc(doc(db, 'users', user.uid));
+      if (snap.exists() && snap.data().role === 'professor') {
+        window.location.href = '/professor.html';
+      }
+      // Se for aluno, app.js assume o controle normalmente
+    } catch (e) {
+      console.warn('Erro ao checar role:', e);
+    }
   });
 </script>
 <script type="module" src="/assets/js/app.js"></script>

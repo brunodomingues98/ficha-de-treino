@@ -1,7 +1,7 @@
 // ============================================================
 //  app.js — SPA: roteamento, renderização, interações
 // ============================================================
-import { TREINOS, PLANEJAMENTO, SUPLEMENTACAO, DIETA } from './db.js';
+import { SUPLEMENTACAO, DIETA } from './db.js';
 import {
   auth, db, googleProvider,
   signInWithPopup, signInWithEmailAndPassword,
@@ -12,11 +12,13 @@ import {
 
 // ── ESTADO ─────────────────────────────────────────────────
 let currentUser  = null;
+let userData     = null;  // documento do Firestore (inclui role, treinos)
+let TREINOS      = {};    // treinos do aluno, vindos do Firestore
 let currentPage  = 'home';
 let currentTreino = null;
-let seriesState  = {}; // { exercicioId: [false,false,...] }
-let timers       = {}; // { exercicioId: intervalId }
-let restCounters = {}; // { exercicioId: segundos }
+let seriesState  = {};
+let timers       = {};
+let restCounters = {};
 
 // ── ELEMENTOS ──────────────────────────────────────────────
 const loginScreen  = document.getElementById('login-screen');
@@ -31,7 +33,8 @@ const toast        = document.getElementById('toast');
 onAuthStateChanged(auth, async user => {
   if (user) {
     currentUser = user;
-    await syncUserProfile(user);
+    const ok = await loadUserData(user);
+    if (!ok) return; // já redirecionou (professor ou erro)
     showApp();
     renderPage('home');
   } else {
@@ -40,22 +43,31 @@ onAuthStateChanged(auth, async user => {
   }
 });
 
-async function syncUserProfile(user) {
+async function loadUserData(user) {
   try {
     const ref = doc(db, 'users', user.uid);
     const snap = await getDoc(ref);
+
     if (!snap.exists()) {
-      await setDoc(ref, {
-        uid:       user.uid,
-        email:     user.email,
-        name:      user.displayName || user.email.split('@')[0],
-        photoURL:  user.photoURL || null,
-        createdAt: new Date().toISOString()
-      });
+      // Conta sem perfil no Firestore — não deveria acontecer no fluxo
+      // novo (professor sempre cria o doc), mas tratamos por segurança.
+      showToast('⚠️ Conta sem perfil. Fale com seu professor.');
+      await signOut(auth);
+      return false;
     }
+
+    userData = snap.data();
+
+    if (userData.role === 'professor') {
+      window.location.href = '/professor.html';
+      return false;
+    }
+
+    TREINOS = userData.treinos || {};
+    return true;
   } catch (e) {
-    // Firestore pode não estar configurado ainda — ignora silenciosamente
-    console.warn('Firestore sync skipped:', e.message);
+    console.error('Erro ao carregar dados do usuário:', e);
+    return false;
   }
 }
 
@@ -72,12 +84,8 @@ function showApp() {
 // ── AVATAR NO HEADER ────────────────────────────────────────
 function updateHeaderAvatar() {
   if (!currentUser) return;
-  if (currentUser.photoURL) {
-    headerAvatar.innerHTML = `<img src="${currentUser.photoURL}" alt="avatar">`;
-  } else {
-    const initials = getInitials(currentUser.displayName || currentUser.email);
-    headerAvatar.textContent = initials;
-  }
+  const nome = userData?.name || currentUser.email;
+  headerAvatar.textContent = getInitials(nome);
 }
 function getInitials(str) {
   return str.split(' ').slice(0, 2).map(w => w[0]?.toUpperCase()).join('');
@@ -135,27 +143,27 @@ function renderPage(page, params = {}) {
 
 // ── HOME ────────────────────────────────────────────────────
 function renderHome() {
-  const nome = currentUser?.displayName?.split(' ')[0]
+  const nome = userData?.name?.split(' ')[0]
              || currentUser?.email?.split('@')[0]
              || 'Atleta';
 
-  const cards = Object.entries(TREINOS).map(([letra, t]) => `
-    <div class="treino-card" data-treino="${letra}"
-         style="--card-color: ${t.cor}">
-      <div class="treino-card-icon">${t.icone}</div>
-      <div class="treino-card-letra">${letra}</div>
-      <div class="treino-card-nome">${t.nome}</div>
-      <div class="treino-card-dia">${t.dia}</div>
-    </div>
-  `).join('');
+  const letras = Object.keys(TREINOS);
 
-  const rows = PLANEJAMENTO.map(p => `
-    <tr>
-      <td>${p.dia}</td>
-      <td>${p.horario}</td>
-      <td>${p.treino}</td>
-    </tr>
-  `).join('');
+  const cards = letras.length ? letras.map(letra => {
+    const t = TREINOS[letra];
+    return `
+      <div class="treino-card" data-treino="${letra}">
+        <div class="treino-card-icon">💪</div>
+        <div class="treino-card-letra">${letra}</div>
+        <div class="treino-card-nome">${t.nome || ''}</div>
+      </div>
+    `;
+  }).join('') : `
+    <div class="empty-state" style="grid-column:1/-1">
+      <div class="icon">📋</div>
+      <p>Seu professor ainda não montou nenhum treino.<br>Volte em breve!</p>
+    </div>
+  `;
 
   return `
     <div class="hero-banner">
@@ -169,14 +177,6 @@ function renderHome() {
 
     <p class="section-title">SEUS TREINOS</p>
     <div class="treino-cards">${cards}</div>
-
-    <p class="section-title">📅 PLANEJAMENTO SEMANAL</p>
-    <div class="schedule-section">
-      <table class="schedule-table">
-        <thead><tr><th>Dia</th><th>Horário</th><th>Treino</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>
   `;
 }
 
@@ -238,7 +238,7 @@ function renderTreinoPage(letra) {
     <div class="page-header">
       <button class="btn-back" id="btn-back">‹</button>
       <div>
-        <div class="page-title">${t.icone} ${t.nome}</div>
+        <div class="page-title">💪 ${t.nome}</div>
         <div class="page-badge">Treino ${letra} · ${t.exercicios.length} exercícios</div>
       </div>
     </div>
@@ -292,14 +292,12 @@ function renderDieta() {
 // ── PERFIL ──────────────────────────────────────────────────
 function renderPerfil() {
   if (!currentUser) return '';
-  const nome = currentUser.displayName || currentUser.email.split('@')[0];
+  const nome = userData?.name || currentUser.email.split('@')[0];
   const email = currentUser.email;
-  const avatarContent = currentUser.photoURL
-    ? `<img src="${currentUser.photoURL}" alt="avatar">`
-    : `<span>${getInitials(nome)}</span>`;
+  const avatarContent = `<span>${getInitials(nome)}</span>`;
 
   const totalExercicios = Object.values(TREINOS)
-    .reduce((acc, t) => acc + t.exercicios.length, 0);
+    .reduce((acc, t) => acc + (t.exercicios?.length || 0), 0);
 
   return `
     <div class="profile-page">
@@ -331,14 +329,6 @@ function renderPerfil() {
           <span class="profile-option-icon">✉️</span>
           ${email}
         </div>
-      </div>
-
-      <div class="profile-option" id="btn-change-name">
-        <div class="profile-option-left">
-          <span class="profile-option-icon">✏️</span>
-          Alterar nome
-        </div>
-        <span style="color:var(--text-muted);font-size:14px">›</span>
       </div>
 
       <button class="btn-logout" id="btn-logout-profile">Sair da conta</button>
@@ -456,15 +446,6 @@ function bindNutricao() {
 
 function bindPerfil() {
   document.getElementById('btn-logout-profile')?.addEventListener('click', doLogout);
-  document.getElementById('btn-change-name')?.addEventListener('click', async () => {
-    const novoNome = prompt('Novo nome:');
-    if (novoNome?.trim()) {
-      await updateProfile(auth.currentUser, { displayName: novoNome.trim() });
-      showToast('✅ Nome atualizado!');
-      updateHeaderAvatar();
-      renderPage('perfil');
-    }
-  });
 }
 
 // ── TOAST ───────────────────────────────────────────────────

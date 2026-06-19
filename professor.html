@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0f">
+  <title>Ficha de Treino — Painel do Professor</title>
+  <link rel="icon" href="/assets/images/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <link rel="stylesheet" href="/assets/css/professor.css">
+</head>
+<body>
+
+<div class="desktop-block">
+  <h1>Este app é exclusivo para dispositivos móveis 📱</h1>
+  <p>Acesse pelo seu smartphone para a melhor experiência.</p>
+  <img src="/assets/images/treino-ideal.png" alt="Use o celular">
+</div>
+
+<div class="mobile-app app-shell hidden" id="app-shell">
+
+  <header class="app-header">
+    <span class="header-brand">Painel Professor</span>
+    <div class="header-right">
+      <div class="header-avatar" id="header-avatar">?</div>
+      <button class="btn-menu" id="btn-menu" aria-label="Menu"><span>☰</span></button>
+    </div>
+  </header>
+
+  <div class="nav-dropdown" id="nav-dropdown" role="menu">
+    <div class="nav-section-label">Conta</div>
+    <div class="nav-logout" id="btn-logout-menu" role="menuitem">
+      <span class="nav-icon">🚪</span> Sair
+    </div>
+  </div>
+
+  <main class="app-main" id="app-main" style="padding-bottom: 90px">
+    <div class="spinner"></div>
+  </main>
+
+  <!-- FAB adicionar aluno -->
+  <button class="fab-add" id="fab-add-aluno" title="Adicionar aluno">+</button>
+
+</div>
+
+<div class="mobile-app login-page hidden" id="login-screen">
+  <div class="login-card" style="text-align:center">
+    <div class="spinner"></div>
+    <p style="color:var(--text-muted);margin-top:12px">Verificando acesso...</p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module" src="/assets/js/professor.js"></script>
+</body>
+</html>
