@@ -1,7 +1,6 @@
 // ============================================================
 //  app.js — SPA: roteamento, renderização, interações
 // ============================================================
-import { SUPLEMENTACAO, DIETA } from './db.js';
 import {
   auth, db, googleProvider,
   signInWithPopup, signInWithEmailAndPassword,
@@ -149,13 +148,17 @@ function renderHome() {
 
   const letras = Object.keys(TREINOS);
 
+  const hoje = new Date().toISOString().split('T')[0];
+
   const cards = letras.length ? letras.map(letra => {
     const t = TREINOS[letra];
+    const vencido = t.dataFim && t.dataFim < hoje;
     return `
       <div class="treino-card" data-treino="${letra}">
-        <div class="treino-card-icon">💪</div>
+        <div class="treino-card-icon">${vencido ? '⏳' : '💪'}</div>
         <div class="treino-card-letra">${letra}</div>
         <div class="treino-card-nome">${t.nome || ''}</div>
+        ${vencido ? `<div class="treino-card-dia" style="color:#f87171">Vencido</div>` : ''}
       </div>
     `;
   }).join('') : `
@@ -181,9 +184,42 @@ function renderHome() {
 }
 
 // ── TREINO ──────────────────────────────────────────────────
+function formatarDataBR(isoDate) {
+  if (!isoDate) return '';
+  const [ano, mes, dia] = isoDate.split('-');
+  return `${dia}/${mes}/${ano}`;
+}
+
+function renderTreinoVencido(letra, t) {
+  const dataFimBR = formatarDataBR(t.dataFim);
+  return `
+    <div class="page-header">
+      <button class="btn-back" id="btn-back">‹</button>
+      <div>
+        <div class="page-title">💪 ${t.nome}</div>
+        <div class="page-badge">Treino ${letra}</div>
+      </div>
+    </div>
+    <div class="empty-state" style="margin-top:40px">
+      <div class="icon">⏳</div>
+      <h2 style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.04em;color:var(--text-primary);margin-bottom:8px">
+        Aguardando renovação
+      </h2>
+      <p>Este treino venceu em <strong style="color:var(--gold)">${dataFimBR}</strong>.<br>
+      Fale com seu professor para renovar.</p>
+    </div>
+  `;
+}
+
 function renderTreinoPage(letra) {
   if (!letra || !TREINOS[letra]) return renderHome();
   const t = TREINOS[letra];
+
+  // ── Checagem de vigência ──────────────────────────────
+  const hoje = new Date().toISOString().split('T')[0];
+  if (t.dataFim && t.dataFim < hoje) {
+    return renderTreinoVencido(letra, t);
+  }
 
   const exercicios = t.exercicios.map(ex => {
     const series = ex.series.match(/(\d+)\s*x/)?.[1] || 3;
@@ -193,7 +229,7 @@ function renderTreinoPage(letra) {
       </button>
     `).join('');
 
-    const dicas = ex.dicas.map(d => `
+    const dicas = (ex.dicas || []).map(d => `
       <div class="dica-item">${d}</div>
     `).join('');
 
@@ -219,8 +255,10 @@ function renderTreinoPage(letra) {
                alt="${ex.nome}"
                loading="lazy"
                decoding="async">
-          <div class="dicas-label">💡 DICAS DE EXECUÇÃO</div>
-          <div class="dicas-list">${dicas}</div>
+          ${dicas ? `
+            <div class="dicas-label">💡 DICAS DE EXECUÇÃO</div>
+            <div class="dicas-list">${dicas}</div>
+          ` : ''}
 
           <div class="series-tracker">
             <div class="series-tracker-label">Marcar séries concluídas</div>
@@ -262,7 +300,11 @@ function renderNutricao(activeTab = 'suplemenacao') {
 }
 
 function renderSupl() {
-  return SUPLEMENTACAO.map(s => `
+  const suplementos = userData?.nutricao?.suplementos || [];
+  if (!suplementos.length) {
+    return `<div class="empty-state"><div class="icon">💊</div><p>Seu professor ainda não cadastrou suplementos.</p></div>`;
+  }
+  return suplementos.map(s => `
     <div class="suplem-card">
       <div class="suplem-header">
         <span class="suplem-nome">${s.nome}</span>
@@ -278,12 +320,16 @@ function renderSupl() {
 }
 
 function renderDieta() {
-  return DIETA.map(m => `
+  const refeicoes = userData?.nutricao?.refeicoes || [];
+  if (!refeicoes.length) {
+    return `<div class="empty-state"><div class="icon">🥗</div><p>Seu professor ainda não cadastrou a dieta.</p></div>`;
+  }
+  return refeicoes.map(m => `
     <div class="meal-card">
       <div class="meal-time">${m.horario}</div>
       <div class="meal-info">
         <div class="meal-nome">${m.ref}</div>
-        ${m.opcoes.map(o => `<div class="meal-opcao">${o}</div>`).join('')}
+        ${(m.opcoes || []).map(o => `<div class="meal-opcao">${o}</div>`).join('')}
       </div>
     </div>
   `).join('');
@@ -317,7 +363,7 @@ function renderPerfil() {
           <div class="stat-label">Exercícios</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">${SUPLEMENTACAO.length}</div>
+          <div class="stat-value">${userData?.nutricao?.suplementos?.length || 0}</div>
           <div class="stat-label">Suplementos</div>
         </div>
       </div>

@@ -18,6 +18,16 @@ let letraAtual = null;     // treino sendo montado (A/B/C/D)
 let exerciciosSelecionados = []; // [{ exId, series }]
 let grupoFiltro = GRUPOS_MUSCULARES[0];
 
+// ── HELPERS DE DATA ───────────────────────────────────────
+function hojeISO() {
+  return new Date().toISOString().split('T')[0];
+}
+function formatarDataBR(isoDate) {
+  if (!isoDate) return '';
+  const [ano, mes, dia] = isoDate.split('-');
+  return `${dia}/${mes}/${ano}`;
+}
+
 const loginScreen  = document.getElementById('login-screen');
 const appShell      = document.getElementById('app-shell');
 const appMain        = document.getElementById('app-main');
@@ -148,15 +158,36 @@ function renderAlunoDetail() {
       ${letras.map(l => {
         const t = a.treinos?.[l];
         const count = t?.exercicios?.length || 0;
+        const vigencia = t?.dataInicio && t?.dataFim
+          ? `${formatarDataBR(t.dataInicio)} – ${formatarDataBR(t.dataFim)}`
+          : '';
+        const vencido = t?.dataFim && t.dataFim < hojeISO();
         return `
           <div class="treino-edit-card ${count ? 'filled' : ''}" data-letra="${l}">
             <div class="treino-edit-letra">${l}</div>
             <div class="treino-edit-count ${count ? 'has-exercicios' : ''}">
               ${count ? `${t.nome || ''} · ${count} exerc.` : 'Vazio · tocar para montar'}
             </div>
+            ${vigencia ? `<div style="font-size:10px;color:${vencido ? '#f87171' : 'var(--text-muted)'};margin-top:3px">
+              ${vencido ? '⚠️ Vencido · ' : ''}${vigencia}
+            </div>` : ''}
           </div>
         `;
       }).join('')}
+    </div>
+
+    <p class="section-title">NUTRIÇÃO</p>
+    <div style="padding:0 16px 16px">
+      <div class="treino-edit-card ${a.nutricao ? 'filled' : ''}" id="card-nutricao" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px">
+        <div style="font-size:28px">🥗</div>
+        <div style="flex:1">
+          <div class="aluno-nome" style="font-size:14px">Plano Nutricional</div>
+          <div class="treino-edit-count ${a.nutricao ? 'has-exercicios' : ''}">
+            ${a.nutricao ? `${a.nutricao.suplementos?.length || 0} suplementos · ${a.nutricao.refeicoes?.length || 0} refeições` : 'Vazio · tocar para montar'}
+          </div>
+        </div>
+        <span style="color:var(--text-muted)">›</span>
+      </div>
     </div>
 
     <p class="section-title">AÇÕES</p>
@@ -170,6 +201,8 @@ function renderAlunoDetail() {
     alunoAtual = null;
     renderAlunosList();
   });
+
+  document.getElementById('card-nutricao').addEventListener('click', abrirBuilderNutricao);
 
   document.querySelectorAll('.treino-edit-card').forEach(card => {
     card.addEventListener('click', () => abrirBuilderTreino(card.dataset.letra));
@@ -220,6 +253,24 @@ function abrirBuilderTreino(letra) {
         <input type="text" id="nome-treino" placeholder="Nome do treino (ex: Peito e Tríceps)"
                value="${treinoExistente?.nome || ''}"
                style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-family:inherit">
+
+        <div class="field-row-2">
+          <div class="field-group">
+            <label>Início da vigência</label>
+            <input type="date" id="treino-data-inicio"
+                   value="${treinoExistente?.dataInicio || ''}"
+                   style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-family:inherit">
+          </div>
+          <div class="field-group">
+            <label>Fim da vigência</label>
+            <input type="date" id="treino-data-fim"
+                   value="${treinoExistente?.dataFim || ''}"
+                   style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-family:inherit">
+          </div>
+        </div>
+        <p style="font-size:11px;color:var(--text-muted)">
+          Após a data de fim, o aluno verá "aguardando renovação" em vez do treino.
+        </p>
       </div>
 
       <div class="treino-montado-list" id="treino-montado-list"></div>
@@ -314,16 +365,25 @@ function renderPickerList() {
 
 async function salvarTreino() {
   const nome = document.getElementById('nome-treino').value.trim() || `Treino ${letraAtual}`;
+  const dataInicio = document.getElementById('treino-data-inicio').value;
+  const dataFim = document.getElementById('treino-data-fim').value;
+
   if (!exerciciosSelecionados.length) {
     showToast('⚠️ Adicione ao menos um exercício');
+    return;
+  }
+  if (dataInicio && dataFim && dataFim < dataInicio) {
+    showToast('⚠️ A data de fim não pode ser antes da data de início');
     return;
   }
 
   const treinoData = {
     nome,
+    dataInicio: dataInicio || null,
+    dataFim: dataFim || null,
     exercicios: exerciciosSelecionados.map(s => {
       const ex = getExercicioPorId(s.exId);
-      return { id: ex.id, nome: ex.nome, series: s.series, gif: ex.gif, musculos: ex.musculos };
+      return { id: ex.id, nome: ex.nome, series: s.series, gif: ex.gif, musculos: ex.musculos, dicas: ex.dicas || [] };
     })
   };
 
@@ -441,6 +501,153 @@ async function criarAluno() {
     };
     errEl.textContent = map[e.code] || ('Erro: ' + e.message);
     errEl.classList.add('show');
+  }
+}
+
+// ── BUILDER DE NUTRIÇÃO (modal) ───────────────────────────
+let refeicoesSelecionadas = [];
+let suplementosSelecionados = [];
+
+function abrirBuilderNutricao() {
+  const nutricaoExistente = alunoAtual.nutricao;
+  refeicoesSelecionadas = nutricaoExistente?.refeicoes ? [...nutricaoExistente.refeicoes] : [];
+  suplementosSelecionados = nutricaoExistente?.suplementos ? [...nutricaoExistente.suplementos] : [];
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'modal-nutricao';
+  overlay.innerHTML = `
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Plano Nutricional</div>
+
+      <div class="exercicio-picker-tabs">
+        <div class="picker-tab active" data-nutritab="refeicoes">🍽️ Refeições</div>
+        <div class="picker-tab" data-nutritab="suplementos">💊 Suplementos</div>
+      </div>
+
+      <div id="nutri-tab-content"></div>
+
+      <button class="btn-primary" id="btn-salvar-nutricao" style="width:100%;margin-top:8px">Salvar Plano Nutricional</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+  document.querySelectorAll('[data-nutritab]').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('[data-nutritab]').forEach(t => t.classList.toggle('active', t === tab));
+      renderNutriTabContent(tab.dataset.nutritab);
+    });
+  });
+
+  renderNutriTabContent('refeicoes');
+  document.getElementById('btn-salvar-nutricao').addEventListener('click', salvarNutricao);
+}
+
+function renderNutriTabContent(tab) {
+  const el = document.getElementById('nutri-tab-content');
+  el.innerHTML = tab === 'refeicoes' ? refeicoesFormHtml() : suplementosFormHtml();
+  bindNutriTabEvents(tab);
+}
+
+function refeicoesFormHtml() {
+  return `
+    <div class="treino-montado-list" id="lista-refeicoes">
+      ${refeicoesSelecionadas.map((r, idx) => `
+        <div class="treino-montado-item" style="flex-direction:column;align-items:stretch;gap:6px">
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="text" class="ref-horario" data-idx="${idx}" value="${r.horario || ''}" placeholder="Horário"
+                   style="width:90px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px;color:#fff;font-size:12px">
+            <input type="text" class="ref-nome" data-idx="${idx}" value="${r.ref || ''}" placeholder="Nome da refeição"
+                   style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px;color:#fff;font-size:12px">
+            <button class="btn-remove-ex" data-remove-ref="${idx}">✕</button>
+          </div>
+          <textarea class="ref-opcoes" data-idx="${idx}" placeholder="Opções (uma por linha)"
+                    style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px;color:#fff;font-size:12px;min-height:50px;font-family:inherit">${(r.opcoes || []).join('\n')}</textarea>
+        </div>
+      `).join('')}
+    </div>
+    <button class="btn-secondary" id="btn-add-refeicao" style="margin-bottom:16px">+ Adicionar refeição</button>
+  `;
+}
+
+function suplementosFormHtml() {
+  return `
+    <div class="treino-montado-list" id="lista-suplementos">
+      ${suplementosSelecionados.map((s, idx) => `
+        <div class="treino-montado-item" style="flex-direction:column;align-items:stretch;gap:6px">
+          <div style="display:flex;gap:8px">
+            <input type="text" class="sup-nome" data-idx="${idx}" value="${s.nome || ''}" placeholder="Nome do suplemento"
+                   style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px;color:#fff;font-size:12px">
+            <button class="btn-remove-ex" data-remove-sup="${idx}">✕</button>
+          </div>
+          <div class="field-row-2">
+            <input type="text" class="sup-qtd" data-idx="${idx}" value="${s.quantidade || ''}" placeholder="Quantidade (ex: 5g)"
+                   style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px;color:#fff;font-size:12px">
+            <input type="text" class="sup-horario" data-idx="${idx}" value="${s.horario || ''}" placeholder="Horário"
+                   style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px;color:#fff;font-size:12px">
+          </div>
+          <input type="text" class="sup-dias" data-idx="${idx}" value="${s.dias || ''}" placeholder="Dias da semana"
+                 style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px;color:#fff;font-size:12px">
+          <textarea class="sup-obs" data-idx="${idx}" placeholder="Observações"
+                    style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px;color:#fff;font-size:12px;min-height:40px;font-family:inherit">${s.obs || ''}</textarea>
+        </div>
+      `).join('')}
+    </div>
+    <button class="btn-secondary" id="btn-add-suplemento" style="margin-bottom:16px">+ Adicionar suplemento</button>
+  `;
+}
+
+function bindNutriTabEvents(tab) {
+  if (tab === 'refeicoes') {
+    document.getElementById('btn-add-refeicao').addEventListener('click', () => {
+      refeicoesSelecionadas.push({ horario: '', ref: '', opcoes: [] });
+      renderNutriTabContent('refeicoes');
+    });
+    document.querySelectorAll('[data-remove-ref]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        refeicoesSelecionadas.splice(parseInt(btn.dataset.removeRef), 1);
+        renderNutriTabContent('refeicoes');
+      });
+    });
+    document.querySelectorAll('.ref-horario').forEach(inp => inp.addEventListener('input', () => refeicoesSelecionadas[inp.dataset.idx].horario = inp.value));
+    document.querySelectorAll('.ref-nome').forEach(inp => inp.addEventListener('input', () => refeicoesSelecionadas[inp.dataset.idx].ref = inp.value));
+    document.querySelectorAll('.ref-opcoes').forEach(inp => inp.addEventListener('input', () => refeicoesSelecionadas[inp.dataset.idx].opcoes = inp.value.split('\n').filter(Boolean)));
+  } else {
+    document.getElementById('btn-add-suplemento').addEventListener('click', () => {
+      suplementosSelecionados.push({ nome: '', quantidade: '', horario: '', dias: '', obs: '' });
+      renderNutriTabContent('suplementos');
+    });
+    document.querySelectorAll('[data-remove-sup]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        suplementosSelecionados.splice(parseInt(btn.dataset.removeSup), 1);
+        renderNutriTabContent('suplementos');
+      });
+    });
+    document.querySelectorAll('.sup-nome').forEach(inp => inp.addEventListener('input', () => suplementosSelecionados[inp.dataset.idx].nome = inp.value));
+    document.querySelectorAll('.sup-qtd').forEach(inp => inp.addEventListener('input', () => suplementosSelecionados[inp.dataset.idx].quantidade = inp.value));
+    document.querySelectorAll('.sup-horario').forEach(inp => inp.addEventListener('input', () => suplementosSelecionados[inp.dataset.idx].horario = inp.value));
+    document.querySelectorAll('.sup-dias').forEach(inp => inp.addEventListener('input', () => suplementosSelecionados[inp.dataset.idx].dias = inp.value));
+    document.querySelectorAll('.sup-obs').forEach(inp => inp.addEventListener('input', () => suplementosSelecionados[inp.dataset.idx].obs = inp.value));
+  }
+}
+
+async function salvarNutricao() {
+  try {
+    const userRef = doc(db, 'users', alunoAtual.uid);
+    const nutricaoData = { refeicoes: refeicoesSelecionadas, suplementos: suplementosSelecionados };
+    await updateDoc(userRef, { nutricao: nutricaoData });
+
+    alunoAtual.nutricao = nutricaoData;
+    const alunoIdx = alunos.findIndex(a => a.uid === alunoAtual.uid);
+    if (alunoIdx >= 0) alunos[alunoIdx] = alunoAtual;
+
+    document.getElementById('modal-nutricao').remove();
+    showToast('✅ Plano nutricional salvo!');
+    renderAlunoDetail();
+  } catch (e) {
+    showToast('❌ Erro ao salvar: ' + e.message);
   }
 }
 
