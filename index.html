@@ -132,8 +132,10 @@
     }
     try {
       const snap = await getDoc(doc(db, 'users', user.uid));
-      if (snap.exists() && snap.data().role === 'professor') {
-        window.location.href = '/professor.html';
+      if (snap.exists()) {
+        const role = snap.data().role;
+        if (role === 'professor') { window.location.href = '/professor.html'; return; }
+        if (role === 'admin')     { window.location.href = '/admin.html'; return; }
       }
       // Se for aluno, app.js assume o controle normalmente
     } catch (e) {
