@@ -6,7 +6,7 @@ import {
   signInWithPopup, signInWithEmailAndPassword,
   createUserWithEmailAndPassword, signOut,
   onAuthStateChanged, updateProfile,
-  doc, setDoc, getDoc
+  doc, setDoc, getDoc, updateDoc
 } from './firebase.js';
 
 // ── ESTADO ─────────────────────────────────────────────────
@@ -18,6 +18,7 @@ let currentTreino = null;
 let seriesState  = {};
 let timers       = {};
 let restCounters = {};
+let treinoSessaoAtiva = false; // true enquanto o aluno está "dentro" de um treino iniciado
 
 // ── ELEMENTOS ──────────────────────────────────────────────
 const loginScreen  = document.getElementById('login-screen');
@@ -68,6 +69,54 @@ async function loadUserData(user) {
     console.error('Erro ao carregar dados do usuário:', e);
     return false;
   }
+}
+
+// ── HISTÓRICO DE TREINOS CONCLUÍDOS ─────────────────────────
+// Guardado em users/{uid}.historico = { "2026-06-22": true, ... }
+// Histórico permanente (não reseta) — a barra semanal só filtra
+// os 7 dias da semana atual a partir desses dados.
+
+function getChaveHoje() {
+  return new Date().toISOString().split('T')[0];
+}
+
+async function marcarTreinoConcluidoHoje() {
+  const chave = getChaveHoje();
+  try {
+    const ref = doc(db, 'users', currentUser.uid);
+    const historico = { ...(userData.historico || {}), [chave]: true };
+    await updateDoc(ref, { historico });
+    userData.historico = historico;
+  } catch (e) {
+    console.error('Erro ao marcar treino concluído:', e);
+    showToast('⚠️ Treino finalizado, mas houve um erro ao salvar o registro.');
+  }
+}
+
+// Retorna array de 7 objetos { letra, dataISO, isHoje, treinou }
+// representando domingo a sábado da semana atual.
+function getDiasDaSemanaAtual() {
+  const letras = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+  const hoje = new Date();
+  const diaSemanaHoje = hoje.getDay(); // 0 = domingo
+  const domingo = new Date(hoje);
+  domingo.setDate(hoje.getDate() - diaSemanaHoje);
+
+  const historico = userData?.historico || {};
+  const hojeISO = getChaveHoje();
+
+  return letras.map((letra, i) => {
+    const dia = new Date(domingo);
+    dia.setDate(domingo.getDate() + i);
+    const dataISO = dia.toISOString().split('T')[0];
+    return {
+      letra,
+      dataISO,
+      isHoje: dataISO === hojeISO,
+      isFuturo: dataISO > hojeISO,
+      treinou: !!historico[dataISO]
+    };
+  });
 }
 
 function showLogin() {
@@ -129,10 +178,20 @@ function renderPage(page, params = {}) {
   wrap.className = 'page-enter';
 
   switch (page) {
-    case 'home':      wrap.innerHTML = renderHome();     break;
-    case 'treino':    wrap.innerHTML = renderTreinoPage(params.letra); currentTreino = params.letra; break;
+    case 'home':
+      treinoSessaoAtiva = false;
+      wrap.innerHTML = renderHome();
+      break;
+    case 'treino':
+      if (currentTreino !== params.letra) treinoSessaoAtiva = false;
+      wrap.innerHTML = renderTreinoPage(params.letra);
+      currentTreino = params.letra;
+      break;
     case 'nutricao':  wrap.innerHTML = renderNutricao(); break;
-    case 'perfil':    wrap.innerHTML = renderPerfil();   break;
+    case 'perfil':
+      treinoSessaoAtiva = false;
+      wrap.innerHTML = renderPerfil();
+      break;
     default:          wrap.innerHTML = renderHome();
   }
 
@@ -168,6 +227,16 @@ function renderHome() {
     </div>
   `;
 
+  const diasSemana = getDiasDaSemanaAtual();
+  const totalTreinados = diasSemana.filter(d => d.treinou).length;
+
+  const semanaHtml = diasSemana.map(d => `
+    <div class="semana-dia ${d.treinou ? 'treinou' : ''} ${d.isHoje ? 'hoje' : ''} ${d.isFuturo ? 'futuro' : ''}">
+      <div class="semana-dia-letra">${d.letra}</div>
+      <div class="semana-dia-marca">${d.treinou ? '✓' : ''}</div>
+    </div>
+  `).join('');
+
   return `
     <div class="hero-banner">
       <img src="/assets/images/logoKB.jpg" alt="Banner" loading="lazy">
@@ -176,6 +245,14 @@ function renderHome() {
     <div class="home-greeting">
       <p class="label">Bom treino,</p>
       <h1>Olá, <span>${nome}</span> 👋</h1>
+    </div>
+
+    <div class="semana-tracker">
+      <div class="semana-tracker-header">
+        <span class="semana-tracker-title">Sua semana</span>
+        <span class="semana-tracker-count">${totalTreinados}/7 dias treinados</span>
+      </div>
+      <div class="semana-tracker-bar">${semanaHtml}</div>
     </div>
 
     <p class="section-title">SEUS TREINOS</p>
@@ -280,6 +357,13 @@ function renderTreinoPage(letra) {
         <div class="page-badge">Treino ${letra} · ${t.exercicios.length} exercícios</div>
       </div>
     </div>
+
+    <div style="padding:0 16px 16px">
+      <button class="btn-treino-toggle ${treinoSessaoAtiva ? 'ativo' : ''}" id="btn-toggle-treino">
+        ${treinoSessaoAtiva ? '⏹ Finalizar Treino' : '▶ Iniciar Treino'}
+      </button>
+    </div>
+
     <div class="exercicios-list">${exercicios}</div>
   `;
 }
@@ -407,6 +491,21 @@ function bindTreino(letra) {
   document.getElementById('btn-back')?.addEventListener('click', () => {
     setActiveNav('home');
     renderPage('home');
+  });
+
+  // botão iniciar/finalizar treino
+  document.getElementById('btn-toggle-treino')?.addEventListener('click', async () => {
+    if (!treinoSessaoAtiva) {
+      treinoSessaoAtiva = true;
+      showToast('▶ Treino iniciado! Bom treino 💪');
+      renderPage('treino', { letra });
+    } else {
+      treinoSessaoAtiva = false;
+      await marcarTreinoConcluidoHoje();
+      showToast('✅ Treino finalizado e registrado!');
+      navigator.vibrate?.(200);
+      renderPage('treino', { letra });
+    }
   });
 
   // expand/collapse exercício
