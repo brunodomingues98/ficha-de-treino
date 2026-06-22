@@ -58,9 +58,19 @@ async function loadUserData(user) {
 
     userData = snap.data();
 
-    if (userData.role === 'professor') {
-      window.location.href = '/professor.html';
+    if (userData.role === 'professor' || userData.role === 'admin') {
+      window.location.href = userData.role === 'admin' ? '/admin.html' : '/professor.html';
       return false;
+    }
+
+    // Cascata: se o professor responsável está inativo, o aluno também é bloqueado
+    if (userData.professorId) {
+      const profSnap = await getDoc(doc(db, 'users', userData.professorId));
+      if (profSnap.exists() && profSnap.data().status === 'inativo') {
+        showToast('⛔ Seu professor está temporariamente inativo. Acesso indisponível.');
+        await signOut(auth);
+        return false;
+      }
     }
 
     TREINOS = userData.treinos || {};

@@ -47,7 +47,7 @@ onAuthStateChanged(auth, async user => {
     return;
   }
 
-  if (snap.data().status === 'pendente') {
+  if (snap.data().status === 'pendente' || snap.data().status === 'inativo') {
     await signOut(auth);
     window.location.href = '/login.html';
     return;

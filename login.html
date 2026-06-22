@@ -82,13 +82,40 @@
 
       const data = snap.data();
 
-      if (data.role === 'professor' && data.status === 'pendente') {
-        showError('Seu cadastro ainda está aguardando aprovação. Tente novamente mais tarde.');
-        await signOut(auth);
+      // ── PROFESSOR ──────────────────────────────────────
+      if (data.role === 'professor') {
+        if (data.status === 'pendente') {
+          showError('Seu cadastro ainda está aguardando aprovação. Tente novamente mais tarde.');
+          await signOut(auth);
+          return;
+        }
+        if (data.status === 'inativo') {
+          showError('Sua conta está inativa. Fale com o administrador do sistema.');
+          await signOut(auth);
+          return;
+        }
+        window.location.href = '/professor.html';
         return;
       }
 
-      window.location.href = data.role === 'professor' ? '/professor.html' : '/index.html';
+      // ── ADMIN ──────────────────────────────────────────
+      if (data.role === 'admin') {
+        window.location.href = '/admin.html';
+        return;
+      }
+
+      // ── ALUNO ──────────────────────────────────────────
+      // checa se o professor responsável está ativo
+      if (data.professorId) {
+        const profSnap = await getDoc(doc(db, 'users', data.professorId));
+        if (profSnap.exists() && profSnap.data().status === 'inativo') {
+          showError('Seu professor está temporariamente inativo. Acesso indisponível.');
+          await signOut(auth);
+          return;
+        }
+      }
+
+      window.location.href = '/index.html';
     } catch {
       window.location.href = '/index.html';
     }
