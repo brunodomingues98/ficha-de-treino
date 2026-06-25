@@ -238,7 +238,12 @@ async function removerAluno() {
 function abrirBuilderTreino(letra) {
   letraAtual = letra;
   const treinoExistente = alunoAtual.treinos?.[letra];
-  exerciciosSelecionados = treinoExistente?.exercicios?.map(e => ({ exId: e.id, series: e.series })) || [];
+  exerciciosSelecionados = treinoExistente?.exercicios?.map(e => ({
+    exId: e.id,
+    numSeries: e.numSeries || 3,
+    repeticoes: e.repeticoes || '8-12',
+    descansoSegundos: e.descansoSegundos || 60
+  })) || [];
   grupoFiltro = GRUPOS_MUSCULARES[0];
 
   const overlay = document.createElement('div');
@@ -311,18 +316,47 @@ function renderTreinoMontado() {
   el.innerHTML = exerciciosSelecionados.map((sel, idx) => {
     const ex = getExercicioPorId(sel.exId);
     return `
-      <div class="treino-montado-item">
-        <img class="treino-montado-thumb" src="${ex.gif}" loading="lazy">
-        <div class="treino-montado-nome">${ex.nome}</div>
-        <input class="treino-montado-series" type="text" value="${sel.series}" data-idx="${idx}" placeholder="3x12">
-        <button class="btn-remove-ex" data-idx="${idx}">✕</button>
+      <div class="treino-montado-item" style="flex-direction:column;align-items:stretch;gap:8px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <img class="treino-montado-thumb" src="${ex.gif}" loading="lazy">
+          <div class="treino-montado-nome" style="flex:1">${ex.nome}</div>
+          <button class="btn-remove-ex" data-idx="${idx}">✕</button>
+        </div>
+        <div class="exercicio-params-row">
+          <div class="exercicio-param">
+            <label>Séries</label>
+            <input type="number" class="param-series" data-idx="${idx}" value="${sel.numSeries}" min="1" max="10">
+          </div>
+          <div class="exercicio-param">
+            <label>Repetições</label>
+            <input type="text" class="param-reps" data-idx="${idx}" value="${sel.repeticoes}" placeholder="8-12">
+          </div>
+          <div class="exercicio-param">
+            <label>Descanso</label>
+            <select class="param-descanso" data-idx="${idx}">
+              ${[15,20,30,45,60,75,90,120,150,180].map(s => `
+                <option value="${s}" ${sel.descansoSegundos === s ? 'selected' : ''}>${s}s</option>
+              `).join('')}
+            </select>
+          </div>
+        </div>
       </div>
     `;
   }).join('');
 
-  el.querySelectorAll('.treino-montado-series').forEach(inp => {
+  el.querySelectorAll('.param-series').forEach(inp => {
     inp.addEventListener('input', () => {
-      exerciciosSelecionados[inp.dataset.idx].series = inp.value;
+      exerciciosSelecionados[inp.dataset.idx].numSeries = parseInt(inp.value) || 1;
+    });
+  });
+  el.querySelectorAll('.param-reps').forEach(inp => {
+    inp.addEventListener('input', () => {
+      exerciciosSelecionados[inp.dataset.idx].repeticoes = inp.value;
+    });
+  });
+  el.querySelectorAll('.param-descanso').forEach(sel => {
+    sel.addEventListener('change', () => {
+      exerciciosSelecionados[sel.dataset.idx].descansoSegundos = parseInt(sel.value);
     });
   });
   el.querySelectorAll('.btn-remove-ex').forEach(btn => {
@@ -355,7 +389,7 @@ function renderPickerList() {
       if (idx >= 0) {
         exerciciosSelecionados.splice(idx, 1);
       } else {
-        exerciciosSelecionados.push({ exId: id, series: '3x12' });
+        exerciciosSelecionados.push({ exId: id, numSeries: 3, repeticoes: '8-12', descansoSegundos: 60 });
       }
       renderTreinoMontado();
       renderPickerList();
@@ -383,7 +417,17 @@ async function salvarTreino() {
     dataFim: dataFim || null,
     exercicios: exerciciosSelecionados.map(s => {
       const ex = getExercicioPorId(s.exId);
-      return { id: ex.id, nome: ex.nome, series: s.series, gif: ex.gif, musculos: ex.musculos, dicas: ex.dicas || [] };
+      return {
+        id: ex.id,
+        nome: ex.nome,
+        gif: ex.gif,
+        musculos: ex.musculos,
+        dicas: ex.dicas || [],
+        numSeries: s.numSeries,
+        repeticoes: s.repeticoes,
+        descansoSegundos: s.descansoSegundos,
+        series: `${s.numSeries}x${s.repeticoes}` // compatibilidade com exibições antigas
+      };
     })
   };
 

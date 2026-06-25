@@ -40,6 +40,10 @@
         <label for="senha-login">Senha</label>
         <input type="password" id="senha-login" placeholder="••••••••" autocomplete="current-password">
       </div>
+      <label class="remember-me-row">
+        <input type="checkbox" id="lembrar-login">
+        <span>Lembrar meu login</span>
+      </label>
       <button class="btn-primary" id="btn-entrar">Entrar</button>
     </div>
 
@@ -55,7 +59,8 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged,
+           setPersistence, browserLocalPersistence, browserSessionPersistence }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import { getFirestore, doc, getDoc }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -125,6 +130,18 @@
   function showError(msg) { errorEl.textContent = msg; errorEl.classList.add('show'); }
   function hideError() { errorEl.classList.remove('show'); }
 
+  // ── Lembrar login: pré-preenche e-mail salvo anteriormente ──
+  const STORAGE_KEY = 'ficha-treino-lembrar-email';
+  const emailInput = document.getElementById('email-login');
+  const lembrarCheckbox = document.getElementById('lembrar-login');
+
+  const emailSalvo = localStorage.getItem(STORAGE_KEY);
+  if (emailSalvo) {
+    emailInput.value = emailSalvo;
+    lembrarCheckbox.checked = true;
+    document.getElementById('senha-login').focus();
+  }
+
   const btn = document.getElementById('btn-entrar');
   btn.dataset.label = btn.textContent;
   function setLoading(loading) {
@@ -138,11 +155,22 @@
 
   btn.addEventListener('click', async () => {
     hideError();
-    const email = document.getElementById('email-login').value.trim();
+    const email = emailInput.value.trim();
     const senha = document.getElementById('senha-login').value;
+    const lembrar = lembrarCheckbox.checked;
     if (!email || !senha) return showError('Preencha e-mail e senha.');
     setLoading(true);
     try {
+      // Define se a sessão persiste após fechar o navegador/app
+      // (lembrar) ou só dura a aba atual (não lembrar).
+      await setPersistence(auth, lembrar ? browserLocalPersistence : browserSessionPersistence);
+
+      if (lembrar) {
+        localStorage.setItem(STORAGE_KEY, email);
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+
       await signInWithEmailAndPassword(auth, email, senha);
     } catch (e) {
       setLoading(false);

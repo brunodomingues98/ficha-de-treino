@@ -273,3 +273,36 @@
 }
 
 .field-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* ── PARÂMETROS DO EXERCÍCIO (séries/reps/descanso) ───────── */
+.exercicio-params-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.exercicio-param {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.exercicio-param label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.exercicio-param input,
+.exercicio-param select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 6px;
+  font-size: 13px;
+  color: var(--text-primary);
+  font-family: inherit;
+  width: 100%;
+}

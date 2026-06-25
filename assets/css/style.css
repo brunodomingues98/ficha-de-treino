@@ -254,6 +254,23 @@ ul { list-style: none; }
 }
 .login-error.show { display: block; }
 
+.remember-me-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  margin: -2px 0 4px;
+}
+.remember-me-row input[type="checkbox"] {
+  width: 18px; height: 18px;
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+.remember-me-row span {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
 /* ══════════════════════════════════════════════════════════
    SHELL (APP AUTENTICADO)
    ══════════════════════════════════════════════════════════ */
@@ -685,35 +702,86 @@ ul { list-style: none; }
   color: var(--text-muted);
   margin-bottom: 10px;
 }
-.series-dots {
+
+.series-rows-list {
   display: flex;
+  flex-direction: column;
   gap: 8px;
-  flex-wrap: wrap;
-  align-items: center;
 }
-.serie-dot {
-  width: 36px; height: 36px;
+
+.serie-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.serie-check {
+  width: 30px; height: 30px;
   border-radius: 50%;
   border: 2px solid var(--border);
   background: var(--surface);
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-muted);
   display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
+  flex-shrink: 0;
   transition: var(--transition);
-  position: relative;
 }
-.serie-dot.done {
+.serie-check-icon {
+  font-size: 14px;
+  color: transparent;
+  font-weight: 700;
+}
+.serie-check.done {
   background: var(--grad-brand);
   border-color: var(--gold);
-  color: #fff;
 }
-.rest-timer {
+.serie-check.done .serie-check-icon { color: #fff; }
+
+.serie-row-label {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.serie-timer-btn {
+  background: var(--surface);
+  border: 1px solid var(--border-gold);
+  border-radius: 16px;
+  padding: 6px 12px;
   font-size: 12px;
   font-weight: 700;
-  color: var(--gold);
-  min-width: 60px;
+  color: var(--gold-light);
+  font-family: inherit;
+  flex-shrink: 0;
+  transition: var(--transition);
+}
+.serie-timer-btn:active { transform: scale(.95); }
+
+/* ── MODAL DE DESCANSO (cronômetro regressivo) ─────────────── */
+.descanso-circle {
+  width: 180px; height: 180px;
+  border-radius: 50%;
+  background: var(--grad-card);
+  border: 3px solid var(--gold);
+  box-shadow: var(--shadow-gold);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 16px auto;
+}
+#descanso-numero {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 64px;
+  line-height: 1;
+  color: var(--gold-light);
+  letter-spacing: .02em;
+}
+.descanso-unidade {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-top: 4px;
 }
 
 /* ── NUTRIÇÃO ────────────────────────────────────────────── */
@@ -1075,6 +1143,46 @@ ul { list-style: none; }
   border: 1px solid rgba(220,38,38,.4);
   color: #f87171;
   box-shadow: none;
+}
+
+/* ── MODAL GENÉRICO (overlay + sheet) ──────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.7);
+  backdrop-filter: blur(4px);
+  z-index: 2000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.modal-overlay.hidden { display: none; }
+
+.modal-sheet {
+  background: var(--surface);
+  border-radius: 24px 24px 0 0;
+  border-top: 1px solid var(--border-gold);
+  width: 100%;
+  max-width: 480px;
+  max-height: 88vh;
+  overflow-y: auto;
+  padding: 8px 20px 28px;
+  animation: sheetUp .25s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+.modal-handle {
+  width: 36px; height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 8px auto 16px;
+}
+
+.modal-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: .04em;
+  margin-bottom: 16px;
 }
 
 /* ── PWA INSTALL BANNER ─────────────────────────────────── */
