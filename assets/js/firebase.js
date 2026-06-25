@@ -16,7 +16,9 @@ const firebaseConfig = {
 import { initializeApp, deleteApp }                from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup,
          signInWithEmailAndPassword, createUserWithEmailAndPassword,
-         signOut, onAuthStateChanged, updateProfile }
+         signOut, onAuthStateChanged, updateProfile,
+         EmailAuthProvider, reauthenticateWithCredential, updatePassword,
+         setPersistence, browserLocalPersistence, browserSessionPersistence }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc,
          collection, getDocs, query, where, addDoc }
@@ -55,6 +57,8 @@ export { auth, db, googleProvider,
          GoogleAuthProvider, signInWithPopup,
          signInWithEmailAndPassword, createUserWithEmailAndPassword,
          signOut, onAuthStateChanged, updateProfile,
+         EmailAuthProvider, reauthenticateWithCredential, updatePassword,
+         setPersistence, browserLocalPersistence, browserSessionPersistence,
          doc, setDoc, getDoc, updateDoc, deleteDoc,
          collection, getDocs, query, where, addDoc,
          createAlunoSemDeslogar };

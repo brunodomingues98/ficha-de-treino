@@ -6,6 +6,7 @@ import {
   signInWithPopup, signInWithEmailAndPassword,
   createUserWithEmailAndPassword, signOut,
   onAuthStateChanged, updateProfile,
+  EmailAuthProvider, reauthenticateWithCredential, updatePassword,
   doc, setDoc, getDoc, updateDoc
 } from './firebase.js';
 
@@ -16,8 +17,6 @@ let TREINOS      = {};    // treinos do aluno, vindos do Firestore
 let currentPage  = 'home';
 let currentTreino = null;
 let seriesState  = {};
-let timers       = {};
-let restCounters = {};
 let treinoSessaoAtiva = false; // true enquanto o aluno está "dentro" de um treino iniciado
 
 // ── ELEMENTOS ──────────────────────────────────────────────
@@ -309,11 +308,20 @@ function renderTreinoPage(letra) {
   }
 
   const exercicios = t.exercicios.map(ex => {
-    const series = ex.series.match(/(\d+)\s*x/)?.[1] || 3;
-    const dots = Array.from({length: parseInt(series)}, (_, i) => `
-      <button class="serie-dot" data-ex="${ex.id}" data-idx="${i}">
-        ${i + 1}
-      </button>
+    const numSeries = ex.numSeries || parseInt(ex.series?.match(/(\d+)\s*x/)?.[1]) || 3;
+    const descanso = ex.descansoSegundos || 60;
+    const repsLabel = ex.repeticoes || ex.series?.split('x')[1] || '';
+
+    const seriesRows = Array.from({length: numSeries}, (_, i) => `
+      <div class="serie-row" data-ex="${ex.id}" data-idx="${i}">
+        <button class="serie-check" data-ex="${ex.id}" data-idx="${i}">
+          <span class="serie-check-icon">✓</span>
+        </button>
+        <span class="serie-row-label">Série ${i + 1}</span>
+        <button class="serie-timer-btn" data-ex="${ex.id}" data-descanso="${descanso}" title="Ver tempo de descanso">
+          ⏱ ${descanso}s
+        </button>
+      </div>
     `).join('');
 
     const dicas = (ex.dicas || []).map(d => `
@@ -330,8 +338,8 @@ function renderTreinoPage(letra) {
                decoding="async">
           <div class="exercicio-info">
             <div class="exercicio-nome">${ex.nome}</div>
-            <div class="exercicio-series">${ex.series}</div>
-            <div class="exercicio-musculos">${ex.musculos.join(', ')}</div>
+            <div class="exercicio-series">${numSeries}x${repsLabel}</div>
+            <div class="exercicio-musculos">${(ex.musculos || []).join(', ')}</div>
           </div>
           <span class="exercicio-chevron">›</span>
         </div>
@@ -349,9 +357,8 @@ function renderTreinoPage(letra) {
 
           <div class="series-tracker">
             <div class="series-tracker-label">Marcar séries concluídas</div>
-            <div class="series-dots" id="dots-${ex.id}">
-              ${dots}
-              <span class="rest-timer hidden" id="timer-${ex.id}">⏱ 60s</span>
+            <div class="series-rows-list" id="rows-${ex.id}">
+              ${seriesRows}
             </div>
           </div>
         </div>
@@ -375,6 +382,19 @@ function renderTreinoPage(letra) {
     </div>
 
     <div class="exercicios-list">${exercicios}</div>
+
+    <!-- Modal de descanso (cronômetro regressivo) -->
+    <div class="modal-overlay hidden" id="modal-descanso">
+      <div class="modal-sheet" style="text-align:center;padding-bottom:32px">
+        <div class="modal-handle"></div>
+        <div class="modal-title" style="text-align:center">⏱ Tempo de Descanso</div>
+        <div class="descanso-circle">
+          <span id="descanso-numero">60</span>
+          <span class="descanso-unidade">segundos</span>
+        </div>
+        <button class="btn-secondary" id="btn-fechar-descanso" style="margin-top:20px">Fechar</button>
+      </div>
+    </div>
   `;
 }
 
@@ -471,7 +491,65 @@ function renderPerfil() {
         </div>
       </div>
 
+      <div class="profile-option" id="btn-editar-nome">
+        <div class="profile-option-left">
+          <span class="profile-option-icon">✏️</span>
+          Alterar nome de exibição
+        </div>
+        <span style="color:var(--text-muted);font-size:14px">›</span>
+      </div>
+
+      <div class="profile-option" id="btn-trocar-senha">
+        <div class="profile-option-left">
+          <span class="profile-option-icon">🔒</span>
+          Trocar senha
+        </div>
+        <span style="color:var(--text-muted);font-size:14px">›</span>
+      </div>
+
       <button class="btn-logout" id="btn-logout-profile">Sair da conta</button>
+    </div>
+
+    <!-- Modal: alterar nome -->
+    <div class="modal-overlay hidden" id="modal-editar-nome">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-title">Alterar nome de exibição</div>
+        <div class="login-error" id="erro-nome"></div>
+        <div class="form-stack">
+          <div class="field-group">
+            <label>Como você quer ser chamado(a)</label>
+            <input type="text" id="input-novo-nome" value="${nome}" placeholder="Seu nome">
+          </div>
+          <button class="btn-primary" id="btn-salvar-nome">Salvar</button>
+          <button class="btn-secondary" id="btn-cancelar-nome">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: trocar senha -->
+    <div class="modal-overlay hidden" id="modal-trocar-senha">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-title">Trocar senha</div>
+        <div class="login-error" id="erro-senha"></div>
+        <div class="form-stack">
+          <div class="field-group">
+            <label>Senha atual</label>
+            <input type="password" id="input-senha-atual" placeholder="••••••••" autocomplete="current-password">
+          </div>
+          <div class="field-group">
+            <label>Nova senha</label>
+            <input type="password" id="input-senha-nova" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+          </div>
+          <div class="field-group">
+            <label>Confirmar nova senha</label>
+            <input type="password" id="input-senha-nova2" placeholder="Repita a nova senha" autocomplete="new-password">
+          </div>
+          <button class="btn-primary" id="btn-salvar-senha">Salvar nova senha</button>
+          <button class="btn-secondary" id="btn-cancelar-senha">Cancelar</button>
+        </div>
+      </div>
     </div>
   `;
 }
@@ -538,53 +616,76 @@ function bindTreino(letra) {
     });
   });
 
-  // séries (pontos)
-  document.querySelectorAll('.serie-dot').forEach(dot => {
-    dot.addEventListener('click', () => {
-      const exId = dot.dataset.ex;
-      const idx  = parseInt(dot.dataset.idx);
-      dot.classList.toggle('done');
+  // marcar série como feita (checkbox) → abre modal de descanso
+  document.querySelectorAll('.serie-check').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const exId = btn.dataset.ex;
+      const idx  = parseInt(btn.dataset.idx);
+      btn.classList.toggle('done');
 
-      const allDots = document.querySelectorAll(`.serie-dot[data-ex="${exId}"]`);
-      const done    = [...allDots].filter(d => d.classList.contains('done')).length;
+      const allChecks = document.querySelectorAll(`.serie-check[data-ex="${exId}"]`);
+      const done = [...allChecks].filter(c => c.classList.contains('done')).length;
 
-      if (dot.classList.contains('done') && done < allDots.length) {
-        startRestTimer(exId);
-      } else if (done === allDots.length) {
-        clearRestTimer(exId);
-        showToast(`✅ ${TREINOS[letra]?.exercicios.find(e => e.id === exId)?.nome} concluído!`);
-        // vibrar se disponível
-        navigator.vibrate?.(200);
+      if (btn.classList.contains('done')) {
+        if (done < allChecks.length) {
+          const timerBtn = document.querySelector(`.serie-timer-btn[data-ex="${exId}"]`);
+          const descanso = parseInt(timerBtn?.dataset.descanso) || 60;
+          abrirModalDescanso(descanso);
+        } else {
+          const nomeEx = TREINOS[letra]?.exercicios.find(e => e.id === exId)?.nome;
+          showToast(`✅ ${nomeEx} concluído!`);
+          navigator.vibrate?.(200);
+        }
       }
     });
   });
+
+  // botão de relógio individual → abre modal de descanso manualmente
+  document.querySelectorAll('.serie-timer-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const descanso = parseInt(btn.dataset.descanso) || 60;
+      abrirModalDescanso(descanso);
+    });
+  });
+
+  // fechar modal de descanso
+  document.getElementById('btn-fechar-descanso')?.addEventListener('click', fecharModalDescanso);
+  document.getElementById('modal-descanso')?.addEventListener('click', e => {
+    if (e.target.id === 'modal-descanso') fecharModalDescanso();
+  });
 }
 
-function startRestTimer(exId) {
-  clearRestTimer(exId);
-  const el = document.getElementById(`timer-${exId}`);
-  if (!el) return;
-  el.classList.remove('hidden');
-  restCounters[exId] = 60;
-  el.textContent = `⏱ 60s`;
+// ── MODAL DE DESCANSO (cronômetro regressivo) ───────────────
+let descansoInterval = null;
 
-  timers[exId] = setInterval(() => {
-    restCounters[exId]--;
-    if (restCounters[exId] <= 0) {
-      clearRestTimer(exId);
-      el.classList.add('hidden');
+function abrirModalDescanso(segundosTotais) {
+  const modal = document.getElementById('modal-descanso');
+  const numeroEl = document.getElementById('descanso-numero');
+  if (!modal || !numeroEl) return;
+
+  clearInterval(descansoInterval);
+  let restante = segundosTotais;
+  numeroEl.textContent = restante;
+  modal.classList.remove('hidden');
+
+  descansoInterval = setInterval(() => {
+    restante--;
+    if (restante <= 0) {
+      clearInterval(descansoInterval);
+      numeroEl.textContent = '0';
       navigator.vibrate?.(300);
       showToast('🔔 Descanso encerrado! Próxima série.');
+      setTimeout(fecharModalDescanso, 600);
     } else {
-      el.textContent = `⏱ ${restCounters[exId]}s`;
+      numeroEl.textContent = restante;
     }
   }, 1000);
 }
 
-function clearRestTimer(exId) {
-  if (timers[exId]) { clearInterval(timers[exId]); delete timers[exId]; }
-  const el = document.getElementById(`timer-${exId}`);
-  if (el) el.classList.add('hidden');
+function fecharModalDescanso() {
+  clearInterval(descansoInterval);
+  document.getElementById('modal-descanso')?.classList.add('hidden');
 }
 
 function bindNutricao() {
@@ -601,6 +702,99 @@ function bindNutricao() {
 
 function bindPerfil() {
   document.getElementById('btn-logout-profile')?.addEventListener('click', doLogout);
+
+  // ── Alterar nome ────────────────────────────────────────
+  const modalNome = document.getElementById('modal-editar-nome');
+  document.getElementById('btn-editar-nome')?.addEventListener('click', () => {
+    modalNome.classList.remove('hidden');
+  });
+  document.getElementById('btn-cancelar-nome')?.addEventListener('click', () => {
+    modalNome.classList.add('hidden');
+  });
+  modalNome?.addEventListener('click', e => { if (e.target === modalNome) modalNome.classList.add('hidden'); });
+
+  document.getElementById('btn-salvar-nome')?.addEventListener('click', async () => {
+    const errEl = document.getElementById('erro-nome');
+    const novoNome = document.getElementById('input-novo-nome').value.trim();
+    errEl.classList.remove('show');
+
+    if (!novoNome) {
+      errEl.textContent = 'Digite um nome.';
+      errEl.classList.add('show');
+      return;
+    }
+
+    try {
+      await updateDoc(doc(db, 'users', currentUser.uid), { name: novoNome });
+      userData.name = novoNome;
+      modalNome.classList.add('hidden');
+      showToast('✅ Nome atualizado!');
+      updateHeaderAvatar();
+      renderPage('perfil');
+    } catch (e) {
+      errEl.textContent = 'Erro ao salvar: ' + e.message;
+      errEl.classList.add('show');
+    }
+  });
+
+  // ── Trocar senha ────────────────────────────────────────
+  const modalSenha = document.getElementById('modal-trocar-senha');
+  document.getElementById('btn-trocar-senha')?.addEventListener('click', () => {
+    modalSenha.classList.remove('hidden');
+  });
+  document.getElementById('btn-cancelar-senha')?.addEventListener('click', () => {
+    modalSenha.classList.add('hidden');
+  });
+  modalSenha?.addEventListener('click', e => { if (e.target === modalSenha) modalSenha.classList.add('hidden'); });
+
+  document.getElementById('btn-salvar-senha')?.addEventListener('click', async () => {
+    const errEl = document.getElementById('erro-senha');
+    const senhaAtual = document.getElementById('input-senha-atual').value;
+    const senhaNova  = document.getElementById('input-senha-nova').value;
+    const senhaNova2 = document.getElementById('input-senha-nova2').value;
+    errEl.classList.remove('show');
+
+    if (!senhaAtual || !senhaNova || !senhaNova2) {
+      errEl.textContent = 'Preencha todos os campos.';
+      errEl.classList.add('show');
+      return;
+    }
+    if (senhaNova.length < 6) {
+      errEl.textContent = 'A nova senha deve ter ao menos 6 caracteres.';
+      errEl.classList.add('show');
+      return;
+    }
+    if (senhaNova !== senhaNova2) {
+      errEl.textContent = 'As senhas não coincidem.';
+      errEl.classList.add('show');
+      return;
+    }
+
+    const btn = document.getElementById('btn-salvar-senha');
+    btn.disabled = true;
+    btn.textContent = 'Salvando...';
+
+    try {
+      const credential = EmailAuthProvider.credential(currentUser.email, senhaAtual);
+      await reauthenticateWithCredential(currentUser, credential);
+      await updatePassword(currentUser, senhaNova);
+
+      modalSenha.classList.add('hidden');
+      showToast('✅ Senha alterada com sucesso!');
+    } catch (e) {
+      const map = {
+        'auth/wrong-password':       'Senha atual incorreta.',
+        'auth/invalid-credential':   'Senha atual incorreta.',
+        'auth/too-many-requests':    'Muitas tentativas. Aguarde alguns minutos.',
+        'auth/weak-password':        'Senha muito fraca.',
+      };
+      errEl.textContent = map[e.code] || ('Erro: ' + e.message);
+      errEl.classList.add('show');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Salvar nova senha';
+    }
+  });
 }
 
 // ── TOAST ───────────────────────────────────────────────────
