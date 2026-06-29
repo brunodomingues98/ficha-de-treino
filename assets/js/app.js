@@ -86,7 +86,11 @@ async function loadUserData(user) {
 // os 7 dias da semana atual a partir desses dados.
 
 function getChaveHoje() {
-  return new Date().toISOString().split('T')[0];
+  const d = new Date();
+  const ano = d.getFullYear();
+  const mes = String(d.getMonth() + 1).padStart(2, '0');
+  const dia = String(d.getDate()).padStart(2, '0');
+  return `${ano}-${mes}-${dia}`;
 }
 
 async function marcarTreinoConcluidoHoje() {
@@ -117,7 +121,10 @@ function getDiasDaSemanaAtual() {
   return letras.map((letra, i) => {
     const dia = new Date(domingo);
     dia.setDate(domingo.getDate() + i);
-    const dataISO = dia.toISOString().split('T')[0];
+    const ano = dia.getFullYear();
+    const mes = String(dia.getMonth() + 1).padStart(2, '0');
+    const diaNum = String(dia.getDate()).padStart(2, '0');
+    const dataISO = `${ano}-${mes}-${diaNum}`;
     return {
       letra,
       dataISO,
@@ -592,7 +599,8 @@ function bindTreino(letra) {
       await marcarTreinoConcluidoHoje();
       showToast('✅ Treino finalizado e registrado!');
       navigator.vibrate?.(200);
-      renderPage('treino', { letra });
+      setActiveNav('home');
+      renderPage('home');
     }
   });
 

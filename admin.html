@@ -13,13 +13,9 @@
 </head>
 <body>
 
-<div class="desktop-block">
-  <h1>Este app é exclusivo para dispositivos móveis 📱</h1>
-  <p>Acesse pelo seu smartphone para a melhor experiência.</p>
-  <img src="/assets/images/treino-ideal.png" alt="Use o celular">
-</div>
-
-<div class="mobile-app app-shell hidden" id="app-shell">
+<!-- Painel do admin é liberado em qualquer dispositivo (inclusive
+     desktop) — gestão do sistema é mais confortável em tela maior. -->
+<div class="app-shell hidden" id="app-shell">
 
   <header class="app-header">
     <span class="header-brand">Painel Admin</span>
@@ -42,7 +38,7 @@
 
 </div>
 
-<div class="mobile-app login-page hidden" id="login-screen">
+<div class="login-page hidden" id="login-screen">
   <div class="login-card" style="text-align:center">
     <div class="spinner"></div>
     <p style="color:var(--text-muted);margin-top:12px">Verificando acesso...</p>

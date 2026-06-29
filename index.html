@@ -12,22 +12,69 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/assets/images/icons/apple-touch-icon.png">
   <link rel="stylesheet" href="/assets/css/style.css">
+  <style>
+    /* Fallback de segurança exclusivo desta página: enquanto o JS
+       de device.js não roda, bloqueia desktop por padrão (mais
+       seguro errar bloqueando do que liberando indevidamente).
+       device.js assume o controle via style inline no elemento
+       assim que sabe o role real do usuário. */
+    @media (min-width: 1025px) {
+      html:not(.js-device-ready) .desktop-block { display: grid; }
+      html:not(.js-device-ready) .app-shell,
+      html:not(.js-device-ready) .login-page { display: none; }
+    }
+  </style>
 </head>
 <body>
 
 <!-- ═══════════════════════════════════════════════════════
-     BLOQUEIO DESKTOP
+     BLOQUEIO DESKTOP (somente para alunos — controlado via JS
+     em device.js, conforme o role do usuário logado)
      ═══════════════════════════════════════════════════════ -->
 <div class="desktop-block">
-  <h1>Este app é exclusivo para dispositivos móveis 📱</h1>
-  <p>Acesse pelo seu smartphone para a melhor experiência.</p>
-  <img src="/assets/images/treino-ideal.png" alt="Use o celular">
+  <div class="desktop-explainer">
+    <div class="desktop-explainer-icon">🏋️</div>
+    <h1>Ficha de Treino</h1>
+    <p class="desktop-explainer-sub">
+      Acompanhe seus treinos e nutrição direto do seu professor,
+      organizados num só lugar.
+    </p>
+
+    <div class="desktop-explainer-features">
+      <div class="desktop-feature">
+        <span class="desktop-feature-icon">📋</span>
+        <span>Treinos com fotos e vídeos de cada exercício</span>
+      </div>
+      <div class="desktop-feature">
+        <span class="desktop-feature-icon">⏱</span>
+        <span>Cronômetro de descanso entre as séries</span>
+      </div>
+      <div class="desktop-feature">
+        <span class="desktop-feature-icon">🥗</span>
+        <span>Plano nutricional individual</span>
+      </div>
+      <div class="desktop-feature">
+        <span class="desktop-feature-icon">📅</span>
+        <span>Linha do tempo da sua semana de treinos</span>
+      </div>
+    </div>
+
+    <div class="desktop-explainer-callout">
+      📱 Para usar como aluno, acesse esta página pelo seu
+      <strong>celular</strong> — a experiência foi pensada para
+      uso direto na academia, com uma mão só.
+    </div>
+
+    <p class="desktop-explainer-prof-link">
+      É professor ou administrador? <a href="/login.html" id="link-acesso-prof">Acesse por aqui</a>
+    </p>
+  </div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════
      APP SHELL (autenticado)
      ═══════════════════════════════════════════════════════ -->
-<div class="mobile-app app-shell hidden" id="app-shell">
+<div class="app-shell hidden" id="app-shell">
 
   <!-- HEADER -->
   <header class="app-header">
@@ -92,7 +139,7 @@
 <!-- ═══════════════════════════════════════════════════════
      LOGIN REDIRECT (não autenticado)
      ═══════════════════════════════════════════════════════ -->
-<div class="mobile-app login-page hidden" id="login-screen">
+<div class="login-page hidden" id="login-screen">
   <div class="login-card" style="text-align:center">
     <div class="login-logo">
       <div class="brand">Ficha de Treino</div>
@@ -109,8 +156,9 @@
 <script type="module">
   // ─── Guard de autenticação ──────────────────────────────
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { aplicarBloqueioDesktop } from "/assets/js/device.js";
 
   const firebaseConfig = {
     apiKey:            "AIzaSyDldCAsRyzMoZ3UJHaqpO-o_jdE_hWF5Cw",
@@ -132,15 +180,29 @@
     }
     try {
       const snap = await getDoc(doc(db, 'users', user.uid));
-      if (snap.exists()) {
-        const role = snap.data().role;
-        if (role === 'professor') { window.location.href = '/professor.html'; return; }
-        if (role === 'admin')     { window.location.href = '/admin.html'; return; }
-      }
-      // Se for aluno, app.js assume o controle normalmente
+      const role = snap.exists() ? snap.data().role : 'aluno';
+
+      if (role === 'professor') { window.location.href = '/professor.html'; return; }
+      if (role === 'admin')     { window.location.href = '/admin.html'; return; }
+
+      // É aluno: aplica a regra real de bloqueio (sempre bloqueado no desktop)
+      aplicarBloqueioDesktop(role);
+      // app.js assume o controle normalmente
     } catch (e) {
       console.warn('Erro ao checar role:', e);
+      aplicarBloqueioDesktop(null);
     }
+  });
+
+  // ── Link "É professor ou administrador? Acesse por aqui" ──
+  // Se houver uma sessão de aluno ainda ativa (ex: "lembrar login"
+  // marcado), precisamos sair dela antes de ir para /login.html —
+  // senão o onAuthStateChanged de lá redireciona de volta para o
+  // app do aluno antes da pessoa conseguir trocar de conta.
+  document.getElementById('link-acesso-prof')?.addEventListener('click', async e => {
+    e.preventDefault();
+    try { await signOut(auth); } catch {}
+    window.location.href = '/login.html';
   });
 </script>
 <script type="module" src="/assets/js/app.js"></script>

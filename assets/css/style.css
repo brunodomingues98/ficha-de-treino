@@ -63,30 +63,95 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 img { display: block; max-width: 100%; }
 ul { list-style: none; }
 
-/* ── DESKTOP BLOQUEIO ───────────────────────────────────── */
+/* ── DESKTOP BLOQUEIO (tela explicativa para alunos) ──────── */
 .desktop-block {
   display: none;
   place-items: center;
   min-height: 100dvh;
-  flex-direction: column;
-  gap: 24px;
-  padding: 40px;
-  text-align: center;
+  padding: 40px 24px;
 }
-.desktop-block h1 {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(28px, 4vw, 48px);
-  letter-spacing: .04em;
-  color: var(--gold);
-  line-height: 1.2;
-}
-.desktop-block p { color: var(--text-secondary); font-size: 18px; }
-.desktop-block img { width: min(400px, 60vw); opacity: .8; }
 
-@media (min-width: 1025px) {
-  .desktop-block { display: grid; }
-  .mobile-app    { display: none !important; }
+.desktop-explainer {
+  max-width: 480px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
 }
+
+.desktop-explainer-icon {
+  font-size: 56px;
+  margin-bottom: 8px;
+}
+
+.desktop-explainer h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(32px, 5vw, 44px);
+  letter-spacing: .04em;
+  background: var(--grad-brand);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 4px;
+}
+
+.desktop-explainer-sub {
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1.5;
+  margin-bottom: 28px;
+}
+
+.desktop-explainer-features {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  margin-bottom: 28px;
+}
+
+.desktop-feature {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  background: var(--grad-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.desktop-feature-icon { font-size: 22px; flex-shrink: 0; }
+
+.desktop-explainer-callout {
+  background: var(--grad-subtle);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--gold-light);
+}
+.desktop-explainer-callout strong { color: var(--gold); }
+
+.desktop-explainer-prof-link {
+  margin-top: 20px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.desktop-explainer-prof-link a {
+  color: var(--gold);
+  font-weight: 600;
+  text-decoration: underline;
+}
+.desktop-explainer-prof-link a:hover { color: var(--gold-light); }
+
+/* Nota: o fallback de segurança "bloqueia desktop até o JS confirmar
+   o role" fica isolado dentro de index.html (via <style> inline),
+   não aqui — este style.css é compartilhado também por professor.html
+   e admin.html, que nunca devem ser bloqueados em desktop. */
 
 /* ══════════════════════════════════════════════════════════
    LOGIN PAGE
@@ -999,6 +1064,30 @@ ul { list-style: none; }
   transition: var(--transition);
 }
 .btn-logout:hover { background: rgba(220,38,38,.15); }
+
+.btn-secondary {
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  transition: var(--transition);
+}
+.btn-secondary:hover { border-color: rgba(255,255,255,.2); }
+
+.empty-state {
+  text-align: center;
+  padding: 60px 24px;
+  color: var(--text-muted);
+}
+.empty-state .icon { font-size: 48px; margin-bottom: 12px; opacity: .6; }
+.empty-state p { font-size: 14px; line-height: 1.5; }
+
+.form-stack { display: flex; flex-direction: column; gap: 12px; }
 
 /* ── UTILS ──────────────────────────────────────────────── */
 .hidden { display: none !important; }
