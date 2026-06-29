@@ -13,15 +13,10 @@
 </head>
 <body>
 
-<!-- BLOCO DESKTOP -->
-<div class="desktop-block">
-  <h1>Este app é exclusivo para dispositivos móveis 📱</h1>
-  <p>Acesse pelo seu smartphone para a melhor experiência.</p>
-  <img src="/assets/images/treino-ideal.png" alt="Use o celular">
-</div>
-
-<!-- TELA DE LOGIN -->
-<div class="mobile-app login-page" id="login-page">
+<!-- TELA DE LOGIN — acessível em qualquer dispositivo.
+     A decisão de bloquear desktop (só para alunos) acontece
+     DEPOIS do login, em index.html, quando já sabemos o role. -->
+<div class="login-page" id="login-page" style="display:flex">
   <div class="login-card">
 
     <div class="login-logo">
