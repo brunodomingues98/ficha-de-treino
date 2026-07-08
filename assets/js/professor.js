@@ -281,8 +281,10 @@ function abrirBuilderTreino(letra) {
       <div class="treino-montado-list" id="treino-montado-list"></div>
 
       <p class="section-title" style="padding:0 0 8px">ADICIONAR EXERCÍCIO</p>
-      <div class="exercicio-picker-tabs" id="picker-tabs">
-        ${GRUPOS_MUSCULARES.map(g => `<div class="picker-tab ${g===grupoFiltro?'active':''}" data-grupo="${g}">${g}</div>`).join('')}
+      <div style="margin-bottom:10px">
+        <input type="text" id="exercicio-search"
+          placeholder="🔍 Buscar exercício por nome..."
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-size:14px;font-family:inherit">
       </div>
       <div class="picker-list" id="picker-list"></div>
 
@@ -292,16 +294,12 @@ function abrirBuilderTreino(letra) {
   document.body.appendChild(overlay);
 
   renderTreinoMontado();
-  renderPickerList();
+  renderPickerSearch('');
 
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 
-  document.querySelectorAll('#picker-tabs .picker-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      grupoFiltro = tab.dataset.grupo;
-      document.querySelectorAll('#picker-tabs .picker-tab').forEach(t => t.classList.toggle('active', t.dataset.grupo === grupoFiltro));
-      renderPickerList();
-    });
+  document.getElementById('exercicio-search').addEventListener('input', e => {
+    renderPickerSearch(e.target.value.trim());
   });
 
   document.getElementById('btn-salvar-treino').addEventListener('click', salvarTreino);
@@ -363,24 +361,49 @@ function renderTreinoMontado() {
     btn.addEventListener('click', () => {
       exerciciosSelecionados.splice(parseInt(btn.dataset.idx), 1);
       renderTreinoMontado();
-      renderPickerList();
+      const searchEl = document.getElementById('exercicio-search');
+      renderPickerSearch(searchEl?.value.trim() || '');
     });
   });
 }
 
-function renderPickerList() {
+function renderPickerSearch(termo) {
   const el = document.getElementById('picker-list');
-  const lista = getExerciciosPorGrupo(grupoFiltro);
-  el.innerHTML = lista.map(ex => {
-    const selecionado = exerciciosSelecionados.some(s => s.exId === ex.id);
-    return `
-      <div class="picker-item ${selecionado ? 'selected' : ''}" data-id="${ex.id}">
-        <img class="picker-thumb" src="${ex.gif}" loading="lazy">
-        <div class="picker-nome">${ex.nome}</div>
-        <div class="picker-check"></div>
-      </div>
-    `;
-  }).join('');
+  if (!el) return;
+
+  // Filtra: sem termo → mostra todos; com termo → busca por nome ou grupo
+  const lista = termo.length < 1
+    ? BIBLIOTECA_EXERCICIOS
+    : BIBLIOTECA_EXERCICIOS.filter(ex =>
+        ex.nome.toLowerCase().includes(termo.toLowerCase()) ||
+        ex.grupo.toLowerCase().includes(termo.toLowerCase())
+      );
+
+  if (!lista.length) {
+    el.innerHTML = `<p style="color:var(--text-muted);font-size:13px;text-align:center;padding:16px 0">Nenhum exercício encontrado para "${termo}"</p>`;
+    return;
+  }
+
+  // Agrupa resultados por grupo muscular para facilitar a leitura
+  const porGrupo = {};
+  lista.forEach(ex => {
+    if (!porGrupo[ex.grupo]) porGrupo[ex.grupo] = [];
+    porGrupo[ex.grupo].push(ex);
+  });
+
+  el.innerHTML = Object.entries(porGrupo).map(([grupo, exercicios]) => `
+    <div class="picker-grupo-label">${grupo}</div>
+    ${exercicios.map(ex => {
+      const selecionado = exerciciosSelecionados.some(s => s.exId === ex.id);
+      return `
+        <div class="picker-item ${selecionado ? 'selected' : ''}" data-id="${ex.id}">
+          <img class="picker-thumb" src="${ex.gif}" loading="lazy">
+          <div class="picker-nome">${ex.nome}</div>
+          <div class="picker-check"></div>
+        </div>
+      `;
+    }).join('')}
+  `).join('');
 
   el.querySelectorAll('.picker-item').forEach(item => {
     item.addEventListener('click', () => {
@@ -392,7 +415,9 @@ function renderPickerList() {
         exerciciosSelecionados.push({ exId: id, numSeries: 3, repeticoes: '8-12', descansoSegundos: 60 });
       }
       renderTreinoMontado();
-      renderPickerList();
+      // mantém o campo de busca e re-renderiza com o mesmo termo
+      const searchEl = document.getElementById('exercicio-search');
+      renderPickerSearch(searchEl?.value.trim() || '');
     });
   });
 }
