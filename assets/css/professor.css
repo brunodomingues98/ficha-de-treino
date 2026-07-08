@@ -228,6 +228,18 @@
 .picker-check { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; }
 .picker-item.selected .picker-check { background: var(--gold); border-color: var(--gold); }
 
+.picker-grupo-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--gold);
+  padding: 10px 4px 4px;
+  margin-top: 4px;
+  border-top: 1px solid var(--border);
+}
+.picker-grupo-label:first-child { border-top: none; padding-top: 0; }
+
 .treino-montado-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
 
 .treino-montado-item {
