@@ -98,8 +98,31 @@ async function marcarTreinoConcluidoHoje() {
   try {
     const ref = doc(db, 'users', currentUser.uid);
     const historico = { ...(userData.historico || {}), [chave]: true };
-    await updateDoc(ref, { historico });
+
+    // Coleta cargas preenchidas nos inputs visíveis
+    const cargasNovas = {};
+    document.querySelectorAll('.carga-input').forEach(inp => {
+      const exId = inp.id.replace('carga-', '');
+      const valor = inp.value.trim();
+      if (valor) {
+        const histAtual = userData?.cargas?.[exId] || [];
+        // Só adiciona se a carga for diferente da última registrada hoje
+        const ultimaHoje = histAtual.find(h => h.data === chave);
+        if (!ultimaHoje) {
+          cargasNovas[exId] = [...histAtual, { data: chave, carga: valor }];
+        } else if (ultimaHoje.carga !== valor) {
+          // Atualiza a entrada de hoje
+          cargasNovas[exId] = histAtual.map(h =>
+            h.data === chave ? { ...h, carga: valor } : h
+          );
+        }
+      }
+    });
+
+    const cargas = { ...(userData.cargas || {}), ...cargasNovas };
+    await updateDoc(ref, { historico, cargas });
     userData.historico = historico;
+    userData.cargas = cargas;
   } catch (e) {
     console.error('Erro ao marcar treino concluído:', e);
     showToast('⚠️ Treino finalizado, mas houve um erro ao salvar o registro.');
@@ -199,9 +222,9 @@ function renderPage(page, params = {}) {
       wrap.innerHTML = renderHome();
       break;
     case 'treino':
-      if (currentTreino !== params.letra) treinoSessaoAtiva = false;
-      wrap.innerHTML = renderTreinoPage(params.letra);
-      currentTreino = params.letra;
+      if (currentTreino !== params.id) treinoSessaoAtiva = false;
+      wrap.innerHTML = renderTreinoPage(params.id);
+      currentTreino = params.id;
       break;
     case 'nutricao':  wrap.innerHTML = renderNutricao(); break;
     case 'perfil':
@@ -221,15 +244,15 @@ function renderHome() {
              || currentUser?.email?.split('@')[0]
              || 'Atleta';
 
-  const letras = Object.keys(TREINOS);
-
+  const ids = Object.keys(TREINOS);
   const hoje = new Date().toISOString().split('T')[0];
 
-  const cards = letras.length ? letras.map(letra => {
-    const t = TREINOS[letra];
+  const cards = ids.length ? ids.map((id, idx) => {
+    const t = TREINOS[id];
     const vencido = t.dataFim && t.dataFim < hoje;
+    const letra = String.fromCharCode(65 + idx); // A, B, C... para exibição visual
     return `
-      <div class="treino-card" data-treino="${letra}">
+      <div class="treino-card" data-treino="${id}">
         <div class="treino-card-icon">${vencido ? '⏳' : '💪'}</div>
         <div class="treino-card-letra">${letra}</div>
         <div class="treino-card-nome">${t.nome || ''}</div>
@@ -304,20 +327,24 @@ function renderTreinoVencido(letra, t) {
   `;
 }
 
-function renderTreinoPage(letra) {
-  if (!letra || !TREINOS[letra]) return renderHome();
-  const t = TREINOS[letra];
+function renderTreinoPage(id) {
+  if (!id || !TREINOS[id]) return renderHome();
+  const t = TREINOS[id];
 
   // ── Checagem de vigência ──────────────────────────────
   const hoje = new Date().toISOString().split('T')[0];
   if (t.dataFim && t.dataFim < hoje) {
-    return renderTreinoVencido(letra, t);
+    return renderTreinoVencido(id, t);
   }
 
   const exercicios = t.exercicios.map(ex => {
     const numSeries = ex.numSeries || parseInt(ex.series?.match(/(\d+)\s*x/)?.[1]) || 3;
     const descanso = ex.descansoSegundos || 60;
     const repsLabel = ex.repeticoes || ex.series?.split('x')[1] || '';
+
+    // Última carga registrada como referência
+    const histCarga = userData?.cargas?.[ex.id] || [];
+    const ultimaCarga = histCarga.length ? histCarga[histCarga.length - 1] : null;
 
     const seriesRows = Array.from({length: numSeries}, (_, i) => `
       <div class="serie-row" data-ex="${ex.id}" data-idx="${i}">
@@ -362,6 +389,16 @@ function renderTreinoPage(letra) {
             <div class="dicas-list">${dicas}</div>
           ` : ''}
 
+          <div class="carga-box">
+            <div class="carga-label">⚖️ Carga utilizada</div>
+            <div class="carga-input-row">
+              <input type="text" class="carga-input" id="carga-${ex.id}"
+                     placeholder="Ex: 20kg, 2x10kg, peso corporal"
+                     value="${ultimaCarga?.carga || ''}">
+              ${ultimaCarga ? `<span class="carga-ultima">Última: ${ultimaCarga.carga} <span style="color:var(--text-muted)">(${formatarDataBR(ultimaCarga.data)})</span></span>` : ''}
+            </div>
+          </div>
+
           <div class="series-tracker">
             <div class="series-tracker-label">Marcar séries concluídas</div>
             <div class="series-rows-list" id="rows-${ex.id}">
@@ -378,7 +415,7 @@ function renderTreinoPage(letra) {
       <button class="btn-back" id="btn-back">‹</button>
       <div>
         <div class="page-title">💪 ${t.nome}</div>
-        <div class="page-badge">Treino ${letra} · ${t.exercicios.length} exercícios</div>
+        <div class="page-badge">${t.exercicios.length} exercício${t.exercicios.length !== 1 ? 's' : ''}</div>
       </div>
     </div>
 
@@ -565,7 +602,7 @@ function renderPerfil() {
 function bindEvents(page, params) {
   switch (page) {
     case 'home':    bindHome();            break;
-    case 'treino':  bindTreino(params.letra); break;
+    case 'treino':  bindTreino(params.id); break;
     case 'nutricao':bindNutricao();        break;
     case 'perfil':  bindPerfil();          break;
   }
@@ -574,9 +611,9 @@ function bindEvents(page, params) {
 function bindHome() {
   document.querySelectorAll('.treino-card').forEach(card => {
     card.addEventListener('click', () => {
-      const letra = card.dataset.treino;
+      const id = card.dataset.treino;
       setActiveNav('treinos');
-      renderPage('treino', { letra });
+      renderPage('treino', { id });
     });
   });
 }

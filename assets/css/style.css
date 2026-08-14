@@ -1079,6 +1079,47 @@ ul { list-style: none; }
 }
 .btn-secondary:hover { border-color: rgba(255,255,255,.2); }
 
+/* ── CARGA DO EXERCÍCIO ─────────────────────────────────── */
+.carga-box {
+  background: var(--surface2);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  margin-bottom: 10px;
+}
+.carga-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+.carga-input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.carga-input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 9px 10px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  width: 100%;
+}
+.carga-input:focus {
+  outline: none;
+  border-color: rgba(247,207,73,.5);
+  box-shadow: 0 0 0 3px rgba(247,207,73,.08);
+}
+.carga-ultima {
+  font-size: 11px;
+  color: var(--gold-light);
+}
+
 .empty-state {
   text-align: center;
   padding: 60px 24px;
