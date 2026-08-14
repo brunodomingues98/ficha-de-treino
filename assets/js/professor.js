@@ -139,10 +139,37 @@ function bindAlunoCards() {
   });
 }
 
-// ── DETALHE DO ALUNO (treinos A/B/C/D) ───────────────────
+// ── DETALHE DO ALUNO (treinos dinâmicos) ─────────────────
 function renderAlunoDetail() {
   const a = alunoAtual;
-  const letras = ['A', 'B', 'C', 'D'];
+  const treinos = a.treinos || {};
+  const ids = Object.keys(treinos);
+
+  const treinoCards = ids.map(id => {
+    const t = treinos[id];
+    const count = t?.exercicios?.length || 0;
+    const vigencia = t?.dataInicio && t?.dataFim
+      ? `${formatarDataBR(t.dataInicio)} – ${formatarDataBR(t.dataFim)}`
+      : '';
+    const vencido = t?.dataFim && t.dataFim < hojeISO();
+    return `
+      <div class="treino-edit-card filled" style="position:relative">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+          <div style="flex:1;cursor:pointer" data-edit-treino="${id}">
+            <div class="treino-edit-letra" style="font-size:18px;letter-spacing:.02em">${t.nome || 'Sem nome'}</div>
+            <div class="treino-edit-count has-exercicios">${count} exercício${count !== 1 ? 's' : ''}</div>
+            ${vigencia ? `<div style="font-size:10px;color:${vencido ? '#f87171' : 'var(--text-muted)'};margin-top:3px">
+              ${vencido ? '⚠️ Vencido · ' : ''}${vigencia}
+            </div>` : ''}
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <button class="btn-edit-treino" data-edit-treino="${id}" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--gold);font-size:12px;font-weight:700">✏️</button>
+            <button class="btn-del-treino" data-del-treino="${id}" style="background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.25);border-radius:8px;padding:6px 10px;color:#f87171;font-size:12px;font-weight:700">🗑️</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
 
   appMain.innerHTML = `
     <div class="aluno-detail-header">
@@ -153,32 +180,28 @@ function renderAlunoDetail() {
       </div>
     </div>
 
-    <p class="section-title">TREINOS</p>
-    <div class="treino-edit-cards">
-      ${letras.map(l => {
-        const t = a.treinos?.[l];
-        const count = t?.exercicios?.length || 0;
-        const vigencia = t?.dataInicio && t?.dataFim
-          ? `${formatarDataBR(t.dataInicio)} – ${formatarDataBR(t.dataFim)}`
-          : '';
-        const vencido = t?.dataFim && t.dataFim < hojeISO();
-        return `
-          <div class="treino-edit-card ${count ? 'filled' : ''}" data-letra="${l}">
-            <div class="treino-edit-letra">${l}</div>
-            <div class="treino-edit-count ${count ? 'has-exercicios' : ''}">
-              ${count ? `${t.nome || ''} · ${count} exerc.` : 'Vazio · tocar para montar'}
-            </div>
-            ${vigencia ? `<div style="font-size:10px;color:${vencido ? '#f87171' : 'var(--text-muted)'};margin-top:3px">
-              ${vencido ? '⚠️ Vencido · ' : ''}${vigencia}
-            </div>` : ''}
-          </div>
-        `;
-      }).join('')}
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 16px 8px">
+      <p class="section-title" style="padding:0;margin:0">TREINOS (${ids.length})</p>
+      <button class="btn-secondary" id="btn-novo-treino" style="width:auto;padding:8px 14px;font-size:13px">+ Novo treino</button>
+    </div>
+
+    <div class="treino-edit-cards" id="treinos-container">
+      ${ids.length ? treinoCards : `
+        <div class="empty-state" style="grid-column:1/-1;padding:32px 16px">
+          <div class="icon">📋</div>
+          <p>Nenhum treino cadastrado ainda.<br>Toque em "Novo treino" para começar.</p>
+        </div>
+      `}
+    </div>
+
+    <p class="section-title">CARGAS REGISTRADAS</p>
+    <div style="padding:0 16px 16px">
+      ${renderCargasAluno(a)}
     </div>
 
     <p class="section-title">NUTRIÇÃO</p>
     <div style="padding:0 16px 16px">
-      <div class="treino-edit-card ${a.nutricao ? 'filled' : ''}" id="card-nutricao" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px">
+      <div class="treino-edit-card ${a.nutricao ? 'filled' : ''}" id="card-nutricao" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;cursor:pointer">
         <div style="font-size:28px">🥗</div>
         <div style="flex:1">
           <div class="aluno-nome" style="font-size:14px">Plano Nutricional</div>
@@ -202,14 +225,96 @@ function renderAlunoDetail() {
     renderAlunosList();
   });
 
+  document.getElementById('btn-novo-treino').addEventListener('click', () => abrirBuilderTreino(null));
   document.getElementById('card-nutricao').addEventListener('click', abrirBuilderNutricao);
-
-  document.querySelectorAll('.treino-edit-card').forEach(card => {
-    card.addEventListener('click', () => abrirBuilderTreino(card.dataset.letra));
-  });
-
   document.getElementById('btn-reset-senha').addEventListener('click', resetarSenhaAluno);
   document.getElementById('btn-remover-aluno').addEventListener('click', removerAluno);
+
+  // editar treino
+  document.querySelectorAll('[data-edit-treino]').forEach(el => {
+    el.addEventListener('click', () => abrirBuilderTreino(el.dataset.editTreino));
+  });
+
+  // excluir treino
+  document.querySelectorAll('.btn-del-treino').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.delTreino;
+      const nome = alunoAtual.treinos[id]?.nome || 'este treino';
+      if (!confirm(`Excluir "${nome}"? Esta ação não pode ser desfeita.`)) return;
+      try {
+        const treinos = { ...alunoAtual.treinos };
+        delete treinos[id];
+        await updateDoc(doc(db, 'users', alunoAtual.uid), { treinos });
+        alunoAtual.treinos = treinos;
+        const idx = alunos.findIndex(a => a.uid === alunoAtual.uid);
+        if (idx >= 0) alunos[idx] = alunoAtual;
+        showToast('✅ Treino excluído');
+        renderAlunoDetail();
+      } catch (e) {
+        showToast('❌ Erro ao excluir: ' + e.message);
+      }
+    });
+  });
+}
+
+function renderCargasAluno(a) {
+  const cargas = a.cargas || {};
+  const treinos = a.treinos || {};
+
+  // Coleta todos os exercícios de todos os treinos
+  const todosExercicios = [];
+  Object.values(treinos).forEach(t => {
+    (t.exercicios || []).forEach(ex => {
+      if (!todosExercicios.find(e => e.id === ex.id)) {
+        todosExercicios.push(ex);
+      }
+    });
+  });
+
+  const comCarga = todosExercicios.filter(ex => cargas[ex.id]?.length > 0);
+
+  if (!comCarga.length) {
+    return `<p style="color:var(--text-muted);font-size:13px;text-align:center;padding:16px 0">
+      O aluno ainda não registrou nenhuma carga.
+    </p>`;
+  }
+
+  return comCarga.map(ex => {
+    const hist = cargas[ex.id] || [];
+    const ultima = hist[hist.length - 1];
+    const anterior = hist.length > 1 ? hist[hist.length - 2] : null;
+    const evolucao = anterior
+      ? `<span style="font-size:11px;color:var(--text-muted)">Anterior: ${anterior.carga} (${formatarDataBR(anterior.data)})</span>`
+      : '';
+
+    return `
+      <div class="suplem-card" style="margin-bottom:8px">
+        <div class="suplem-header">
+          <span class="suplem-nome" style="font-size:14px">${ex.nome}</span>
+          <span class="suplem-qty">${ultima.carga}</span>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px">
+          Última atualização: ${formatarDataBR(ultima.data)}
+        </div>
+        ${evolucao}
+        ${hist.length > 1 ? `
+          <details style="margin-top:8px">
+            <summary style="font-size:11px;color:var(--gold);cursor:pointer;list-style:none">
+              Ver histórico completo (${hist.length} registros)
+            </summary>
+            <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px">
+              ${[...hist].reverse().map(h => `
+                <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary)">
+                  <span>${formatarDataBR(h.data)}</span>
+                  <strong>${h.carga}</strong>
+                </div>
+              `).join('')}
+            </div>
+          </details>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
 }
 
 async function resetarSenhaAluno() {
@@ -235,9 +340,14 @@ async function removerAluno() {
 }
 
 // ── BUILDER DE TREINO (modal) ─────────────────────────────
-function abrirBuilderTreino(letra) {
-  letraAtual = letra;
-  const treinoExistente = alunoAtual.treinos?.[letra];
+function gerarIdTreino() {
+  return 'treino_' + Date.now();
+}
+
+function abrirBuilderTreino(id) {
+  // id = null → novo treino | id = string → editar existente
+  letraAtual = id || gerarIdTreino();
+  const treinoExistente = id ? alunoAtual.treinos?.[id] : null;
   exerciciosSelecionados = treinoExistente?.exercicios?.map(e => ({
     exId: e.id,
     numSeries: e.numSeries || 3,
@@ -252,7 +362,7 @@ function abrirBuilderTreino(letra) {
   overlay.innerHTML = `
     <div class="modal-sheet">
       <div class="modal-handle"></div>
-      <div class="modal-title">Montar Treino ${letra}</div>
+      <div class="modal-title">${treinoExistente ? 'Editar Treino' : 'Novo Treino'}</div>
 
       <div class="form-stack" style="margin-bottom:16px">
         <input type="text" id="nome-treino" placeholder="Nome do treino (ex: Peito e Tríceps)"
