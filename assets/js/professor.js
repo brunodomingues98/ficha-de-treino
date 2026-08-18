@@ -194,9 +194,18 @@ function renderAlunoDetail() {
       `}
     </div>
 
-    <p class="section-title">CARGAS REGISTRADAS</p>
+    <p class="section-title">EVOLUÇÃO DO ALUNO</p>
     <div style="padding:0 16px 16px">
-      ${renderCargasAluno(a)}
+      <div class="treino-edit-card filled" id="btn-ver-evolucao" style="cursor:pointer;display:flex;align-items:center;gap:12px">
+        <div style="font-size:28px">📈</div>
+        <div style="flex:1">
+          <div class="aluno-nome" style="font-size:14px">Evolução de Cargas</div>
+          <div class="treino-edit-count has-exercicios">
+            ${Object.keys(a.cargas || {}).length} exercício${Object.keys(a.cargas || {}).length !== 1 ? 's' : ''} com histórico
+          </div>
+        </div>
+        <span style="color:var(--text-muted)">›</span>
+      </div>
     </div>
 
     <p class="section-title">NUTRIÇÃO</p>
@@ -226,6 +235,7 @@ function renderAlunoDetail() {
   });
 
   document.getElementById('btn-novo-treino').addEventListener('click', () => abrirBuilderTreino(null));
+  document.getElementById('btn-ver-evolucao')?.addEventListener('click', abrirTelaEvolucao);
   document.getElementById('card-nutricao').addEventListener('click', abrirBuilderNutricao);
   document.getElementById('btn-reset-senha').addEventListener('click', resetarSenhaAluno);
   document.getElementById('btn-remover-aluno').addEventListener('click', removerAluno);
@@ -257,64 +267,154 @@ function renderAlunoDetail() {
   });
 }
 
-function renderCargasAluno(a) {
+// ── TELA DE EVOLUÇÃO DE CARGAS ────────────────────────────
+function abrirTelaEvolucao() {
+  const a = alunoAtual;
   const cargas = a.cargas || {};
   const treinos = a.treinos || {};
 
-  // Coleta todos os exercícios de todos os treinos
-  const todosExercicios = [];
+  // Coleta todos os exercícios com histórico de carga
+  const exerciciosComHist = [];
+  const vistos = new Set();
   Object.values(treinos).forEach(t => {
     (t.exercicios || []).forEach(ex => {
-      if (!todosExercicios.find(e => e.id === ex.id)) {
-        todosExercicios.push(ex);
+      if (!vistos.has(ex.id) && cargas[ex.id]?.length >= 1) {
+        vistos.add(ex.id);
+        exerciciosComHist.push({ ...ex, hist: cargas[ex.id] });
       }
     });
   });
 
-  const comCarga = todosExercicios.filter(ex => cargas[ex.id]?.length > 0);
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'modal-evolucao';
+  overlay.innerHTML = `
+    <div class="modal-sheet" style="max-height:95vh">
+      <div class="modal-handle"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div class="modal-title" style="margin:0">📈 Evolução de ${a.name}</div>
+        <button id="btn-fechar-evolucao" style="color:var(--text-muted);font-size:22px;line-height:1">×</button>
+      </div>
 
-  if (!comCarga.length) {
-    return `<p style="color:var(--text-muted);font-size:13px;text-align:center;padding:16px 0">
-      O aluno ainda não registrou nenhuma carga.
-    </p>`;
-  }
+      ${!exerciciosComHist.length ? `
+        <div class="empty-state">
+          <div class="icon">📊</div>
+          <p>Nenhum histórico de carga ainda.<br>O aluno precisa registrar cargas durante os treinos.</p>
+        </div>
+      ` : exerciciosComHist.map(ex => renderMiniGrafico(ex)).join('')}
+    </div>
+  `;
+  document.body.appendChild(overlay);
 
-  return comCarga.map(ex => {
-    const hist = cargas[ex.id] || [];
-    const ultima = hist[hist.length - 1];
-    const anterior = hist.length > 1 ? hist[hist.length - 2] : null;
-    const evolucao = anterior
-      ? `<span style="font-size:11px;color:var(--text-muted)">Anterior: ${anterior.carga} (${formatarDataBR(anterior.data)})</span>`
-      : '';
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.getElementById('btn-fechar-evolucao').addEventListener('click', () => overlay.remove());
+}
 
+function extrairKg(str) {
+  // Tenta extrair valor numérico de strings como "20kg", "2x10kg", "20 kg", "20.5", "20,5"
+  if (!str) return null;
+  const match = str.replace(',', '.').match(/(\d+\.?\d*)/);
+  return match ? parseFloat(match[1]) : null;
+}
+
+function renderMiniGrafico(ex) {
+  const hist = ex.hist || [];
+  const valores = hist.map(h => ({ data: h.data, val: extrairKg(h.carga), carga: h.carga }))
+                      .filter(h => h.val !== null);
+
+  // Se não tiver valores numéricos, mostra só texto
+  if (!valores.length) {
     return `
-      <div class="suplem-card" style="margin-bottom:8px">
-        <div class="suplem-header">
-          <span class="suplem-nome" style="font-size:14px">${ex.nome}</span>
-          <span class="suplem-qty">${ultima.carga}</span>
+      <div class="grafico-card">
+        <div class="grafico-titulo">${ex.nome}</div>
+        <div style="color:var(--text-muted);font-size:12px;padding:12px 0">
+          ${hist.map(h => `<div>${formatarDataBR(h.data)}: ${h.carga}</div>`).join('')}
         </div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:4px">
-          Última atualização: ${formatarDataBR(ultima.data)}
-        </div>
-        ${evolucao}
-        ${hist.length > 1 ? `
-          <details style="margin-top:8px">
-            <summary style="font-size:11px;color:var(--gold);cursor:pointer;list-style:none">
-              Ver histórico completo (${hist.length} registros)
-            </summary>
-            <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px">
-              ${[...hist].reverse().map(h => `
-                <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary)">
-                  <span>${formatarDataBR(h.data)}</span>
-                  <strong>${h.carga}</strong>
-                </div>
-              `).join('')}
-            </div>
-          </details>
-        ` : ''}
       </div>
     `;
-  }).join('');
+  }
+
+  const W = 280, H = 80, PAD = 8;
+  const minVal = Math.min(...valores.map(v => v.val));
+  const maxVal = Math.max(...valores.map(v => v.val));
+  const range = maxVal - minVal || 1;
+  const n = valores.length;
+
+  // Pontos do gráfico
+  const pts = valores.map((v, i) => {
+    const x = PAD + (i / Math.max(n - 1, 1)) * (W - PAD * 2);
+    const y = PAD + (1 - (v.val - minVal) / range) * (H - PAD * 2);
+    return { x, y, ...v };
+  });
+
+  const polyline = pts.map(p => `${p.x},${p.y}`).join(' ');
+
+  // Área abaixo da linha
+  const areaPoints = `${pts[0].x},${H} ` +
+    pts.map(p => `${p.x},${p.y}`).join(' ') +
+    ` ${pts[pts.length-1].x},${H}`;
+
+  const ultima = valores[valores.length - 1];
+  const primeira = valores[0];
+  const evolucaoNum = ultima.val - primeira.val;
+  const evolucaoStr = evolucaoNum === 0 ? '→ Estável' :
+    evolucaoNum > 0 ? `↑ +${evolucaoNum.toFixed(1)}kg` : `↓ ${evolucaoNum.toFixed(1)}kg`;
+  const evolucaoCor = evolucaoNum > 0 ? '#34d399' : evolucaoNum < 0 ? '#f87171' : 'var(--text-muted)';
+
+  // Labels do eixo X (datas, só primeira e última)
+  const labelIni = formatarDataBR(pts[0].data);
+  const labelFim = formatarDataBR(pts[pts.length-1].data);
+
+  return `
+    <div class="grafico-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div class="grafico-titulo">${ex.nome}</div>
+        <span style="font-size:12px;font-weight:700;color:${evolucaoCor}">${evolucaoStr}</span>
+      </div>
+
+      <div style="position:relative">
+        <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="grad-${ex.id}" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#f7cf49" stop-opacity="0.25"/>
+              <stop offset="100%" stop-color="#f7cf49" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Área -->
+          <polygon points="${areaPoints}" fill="url(#grad-${ex.id})"/>
+
+          <!-- Linha -->
+          <polyline points="${polyline}"
+            fill="none" stroke="#f7cf49" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round"/>
+
+          <!-- Pontos -->
+          ${pts.map((p, i) => `
+            <circle cx="${p.x}" cy="${p.y}" r="3" fill="#f7cf49"/>
+            ${i === pts.length - 1 ? `
+              <text x="${p.x}" y="${p.y - 7}" text-anchor="middle"
+                font-size="9" fill="#fde68a" font-family="Inter,sans-serif">${p.carga}</text>
+            ` : ''}
+          `).join('')}
+        </svg>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-top:2px">
+        <span>${labelIni}: ${primeira.carga}</span>
+        <span>${labelFim}: ${ultima.carga}</span>
+      </div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:4px">
+        ${valores.length} registro${valores.length !== 1 ? 's' : ''}
+        · Pico: ${Math.max(...valores.map(v => v.val))}kg
+      </div>
+    </div>
+  `;
+}
+
+function renderCargasAluno(a) {
+  // mantida para compatibilidade mas não mais usada na UI
+  return '';
 }
 
 async function resetarSenhaAluno() {
