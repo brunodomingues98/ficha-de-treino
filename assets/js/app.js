@@ -10,6 +10,11 @@ import {
   doc, setDoc, getDoc, updateDoc
 } from './firebase.js';
 
+import {
+  BIBLIOTECA_EXERCICIOS, GRUPOS_MUSCULARES,
+  getExerciciosPorGrupo, getExercicioPorId
+} from './exercicios-db.js';
+
 // ── ESTADO ─────────────────────────────────────────────────
 let currentUser  = null;
 let userData     = null;  // documento do Firestore (inclui role, treinos)
@@ -551,6 +556,24 @@ function renderPerfil() {
         <span style="color:var(--text-muted);font-size:14px">›</span>
       </div>
 
+      ${userData?.role === 'autonomo' ? `
+      <div class="profile-section-title">Meus treinos</div>
+      <div class="profile-option" id="btn-editar-treinos">
+        <div class="profile-option-left">
+          <span class="profile-option-icon">🏋️</span>
+          Editar meus treinos
+        </div>
+        <span style="color:var(--text-muted);font-size:14px">›</span>
+      </div>
+      <div class="profile-option" id="btn-adicionar-treino">
+        <div class="profile-option-left">
+          <span class="profile-option-icon">➕</span>
+          Adicionar treino
+        </div>
+        <span style="color:var(--text-muted);font-size:14px">›</span>
+      </div>
+      ` : ''}
+
       <button class="btn-logout" id="btn-logout-profile">Sair da conta</button>
     </div>
 
@@ -840,9 +863,275 @@ function bindPerfil() {
       btn.textContent = 'Salvar nova senha';
     }
   });
+
+  // ── Editor de treinos (só para autônomo) ───────────────
+  if (userData?.role === 'autonomo') {
+    document.getElementById('btn-editar-treinos')?.addEventListener('click', abrirEditorTreinos);
+    document.getElementById('btn-adicionar-treino')?.addEventListener('click', () => abrirEditorBuilder(null));
+  }
 }
 
-// ── TOAST ───────────────────────────────────────────────────
+// ── EDITOR DE TREINOS DO AUTÔNOMO ──────────────────────────
+function abrirEditorTreinos() {
+  const ids = Object.keys(TREINOS);
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'modal-editor-treinos';
+  overlay.innerHTML = `
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div class="modal-title" style="margin:0">🏋️ Meus Treinos</div>
+        <button id="btn-fechar-editor" style="color:var(--text-muted);font-size:22px">×</button>
+      </div>
+
+      <div id="lista-treinos-editor" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+        ${ids.length ? ids.map(id => {
+          const t = TREINOS[id];
+          const count = t.exercicios?.length || 0;
+          return `
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;display:flex;align-items:center;gap:10px">
+              <div style="flex:1">
+                <div style="font-size:14px;font-weight:600;color:var(--text-primary)">${t.nome}</div>
+                <div style="font-size:12px;color:var(--text-muted)">${count} exercício${count !== 1 ? 's' : ''}</div>
+              </div>
+              <button class="btn-edit-autonomo" data-id="${id}" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--gold);font-size:12px;font-weight:700">✏️ Editar</button>
+              <button class="btn-del-autonomo" data-id="${id}" style="background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.25);border-radius:8px;padding:7px 10px;color:#f87171;font-size:12px">🗑️</button>
+            </div>
+          `;
+        }).join('') : `
+          <div class="empty-state" style="padding:24px 0">
+            <div class="icon">📋</div>
+            <p>Nenhum treino ainda. Adicione o primeiro!</p>
+          </div>
+        `}
+      </div>
+
+      <button class="btn-primary" id="btn-novo-treino-autonomo">+ Adicionar novo treino</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.getElementById('btn-fechar-editor').addEventListener('click', () => overlay.remove());
+  document.getElementById('btn-novo-treino-autonomo').addEventListener('click', () => {
+    overlay.remove();
+    abrirEditorBuilder(null);
+  });
+
+  overlay.querySelectorAll('.btn-edit-autonomo').forEach(btn => {
+    btn.addEventListener('click', () => {
+      overlay.remove();
+      abrirEditorBuilder(btn.dataset.id);
+    });
+  });
+
+  overlay.querySelectorAll('.btn-del-autonomo').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      const nome = TREINOS[id]?.nome || 'este treino';
+      if (!confirm(`Excluir "${nome}"?`)) return;
+      delete TREINOS[id];
+      try {
+        await updateDoc(doc(db, 'users', currentUser.uid), { treinos: TREINOS });
+        userData.treinos = { ...TREINOS };
+        showToast('✅ Treino excluído');
+        overlay.remove();
+        renderPage('perfil');
+      } catch (e) {
+        showToast('❌ Erro: ' + e.message);
+      }
+    });
+  });
+}
+
+// ── BUILDER DO AUTÔNOMO ────────────────────────────────────
+let autonomoExercicios = [];
+let autonomoTreinoId = null;
+
+function abrirEditorBuilder(id) {
+  autonomoTreinoId = id || ('treino_' + Date.now());
+  const existente = id ? TREINOS[id] : null;
+  autonomoExercicios = existente?.exercicios?.map(e => ({
+    exId: e.id, numSeries: e.numSeries || 3,
+    repeticoes: e.repeticoes || '8-12', descansoSegundos: e.descansoSegundos || 60
+  })) || [];
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'modal-builder-autonomo';
+  overlay.innerHTML = `
+    <div class="modal-sheet" style="max-height:92vh">
+      <div class="modal-handle"></div>
+      <div class="modal-title">${existente ? 'Editar Treino' : 'Novo Treino'}</div>
+
+      <div class="form-stack" style="margin-bottom:12px">
+        <input type="text" id="nome-treino-autonomo"
+          value="${existente?.nome || ''}"
+          placeholder="Nome do treino (ex: Peito e Tríceps)"
+          style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-family:inherit">
+      </div>
+
+      <div class="treino-montado-list" id="autonomo-montado-list"></div>
+
+      <p class="section-title" style="padding:0 0 8px">ADICIONAR EXERCÍCIO</p>
+      <div style="margin-bottom:10px">
+        <input type="text" id="autonomo-search"
+          placeholder="🔍 Buscar exercício..."
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-size:14px;font-family:inherit">
+      </div>
+      <div class="picker-list" id="autonomo-picker-list"></div>
+
+      <button class="btn-primary" id="btn-salvar-autonomo" style="width:100%;margin-top:8px">Salvar Treino</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+  renderAutonomoMontado();
+  renderAutonomoPicker('');
+
+  document.getElementById('autonomo-search').addEventListener('input', e => {
+    renderAutonomoPicker(e.target.value.trim());
+  });
+
+  document.getElementById('btn-salvar-autonomo').addEventListener('click', salvarTreinoAutonomo);
+}
+
+function renderAutonomoMontado() {
+  const el = document.getElementById('autonomo-montado-list');
+  if (!el) return;
+  if (!autonomoExercicios.length) {
+    el.innerHTML = `<p style="color:var(--text-muted);font-size:12px;text-align:center;padding:12px 0">Nenhum exercício adicionado ainda.</p>`;
+    return;
+  }
+  el.innerHTML = autonomoExercicios.map((sel, idx) => {
+    const ex = getExercicioPorId(sel.exId);
+    if (!ex) return '';
+    return `
+      <div class="treino-montado-item" style="flex-direction:column;align-items:stretch;gap:8px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <img class="treino-montado-thumb" src="${ex.gif}" loading="lazy">
+          <div class="treino-montado-nome" style="flex:1">${ex.nome}</div>
+          <button class="autonomo-remove-ex" data-idx="${idx}" style="background:rgba(220,38,38,.15);border:none;border-radius:50%;width:26px;height:26px;color:#f87171;font-size:14px">✕</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div class="exercicio-param">
+            <label>Séries</label>
+            <input type="number" class="autonomo-series" data-idx="${idx}" value="${sel.numSeries}" min="1" max="10"
+              style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:7px 6px;color:#fff;font-family:inherit;width:100%">
+          </div>
+          <div class="exercicio-param">
+            <label>Reps</label>
+            <input type="text" class="autonomo-reps" data-idx="${idx}" value="${sel.repeticoes}" placeholder="8-12"
+              style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:7px 6px;color:#fff;font-family:inherit;width:100%">
+          </div>
+          <div class="exercicio-param">
+            <label>Descanso</label>
+            <select class="autonomo-descanso" data-idx="${idx}"
+              style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:7px 6px;color:#fff;font-family:inherit;width:100%">
+              ${[15,20,30,45,60,75,90,120,150,180].map(s =>
+                `<option value="${s}" ${sel.descansoSegundos===s?'selected':''}>${s}s</option>`
+              ).join('')}
+            </select>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  el.querySelectorAll('.autonomo-series').forEach(inp => {
+    inp.addEventListener('input', () => { autonomoExercicios[inp.dataset.idx].numSeries = parseInt(inp.value)||1; });
+  });
+  el.querySelectorAll('.autonomo-reps').forEach(inp => {
+    inp.addEventListener('input', () => { autonomoExercicios[inp.dataset.idx].repeticoes = inp.value; });
+  });
+  el.querySelectorAll('.autonomo-descanso').forEach(sel => {
+    sel.addEventListener('change', () => { autonomoExercicios[sel.dataset.idx].descansoSegundos = parseInt(sel.value); });
+  });
+  el.querySelectorAll('.autonomo-remove-ex').forEach(btn => {
+    btn.addEventListener('click', () => {
+      autonomoExercicios.splice(parseInt(btn.dataset.idx), 1);
+      renderAutonomoMontado();
+      renderAutonomoPicker(document.getElementById('autonomo-search')?.value.trim() || '');
+    });
+  });
+}
+
+function renderAutonomoPicker(termo) {
+  const el = document.getElementById('autonomo-picker-list');
+  if (!el) return;
+  const lista = termo.length < 1
+    ? BIBLIOTECA_EXERCICIOS
+    : BIBLIOTECA_EXERCICIOS.filter(ex =>
+        ex.nome.toLowerCase().includes(termo.toLowerCase()) ||
+        ex.grupo.toLowerCase().includes(termo.toLowerCase())
+      );
+
+  if (!lista.length) {
+    el.innerHTML = `<p style="color:var(--text-muted);font-size:13px;text-align:center;padding:12px 0">Nenhum exercício encontrado.</p>`;
+    return;
+  }
+
+  const porGrupo = {};
+  lista.forEach(ex => {
+    if (!porGrupo[ex.grupo]) porGrupo[ex.grupo] = [];
+    porGrupo[ex.grupo].push(ex);
+  });
+
+  el.innerHTML = Object.entries(porGrupo).map(([grupo, exercicios]) => `
+    <div class="picker-grupo-label">${grupo}</div>
+    ${exercicios.map(ex => {
+      const sel = autonomoExercicios.some(s => s.exId === ex.id);
+      return `
+        <div class="picker-item ${sel ? 'selected' : ''}" data-id="${ex.id}">
+          <img class="picker-thumb" src="${ex.gif}" loading="lazy">
+          <div class="picker-nome">${ex.nome}</div>
+          <div class="picker-check"></div>
+        </div>
+      `;
+    }).join('')}
+  `).join('');
+
+  el.querySelectorAll('.picker-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const id = item.dataset.id;
+      const idx = autonomoExercicios.findIndex(s => s.exId === id);
+      if (idx >= 0) autonomoExercicios.splice(idx, 1);
+      else autonomoExercicios.push({ exId: id, numSeries: 3, repeticoes: '8-12', descansoSegundos: 60 });
+      renderAutonomoMontado();
+      renderAutonomoPicker(document.getElementById('autonomo-search')?.value.trim() || '');
+    });
+  });
+}
+
+async function salvarTreinoAutonomo() {
+  const nome = document.getElementById('nome-treino-autonomo').value.trim() || 'Meu Treino';
+  if (!autonomoExercicios.length) { showToast('⚠️ Adicione ao menos um exercício'); return; }
+
+  const treinoData = {
+    nome,
+    exercicios: autonomoExercicios.map(s => {
+      const ex = getExercicioPorId(s.exId);
+      return { id: ex.id, nome: ex.nome, gif: ex.gif, musculos: ex.musculos,
+               numSeries: s.numSeries, repeticoes: s.repeticoes,
+               descansoSegundos: s.descansoSegundos,
+               series: `${s.numSeries}x${s.repeticoes}` };
+    }),
+    dataInicio: null, dataFim: null
+  };
+
+  try {
+    TREINOS[autonomoTreinoId] = treinoData;
+    await updateDoc(doc(db, 'users', currentUser.uid), { treinos: TREINOS });
+    userData.treinos = { ...TREINOS };
+    document.getElementById('modal-builder-autonomo')?.remove();
+    showToast('✅ Treino salvo!');
+    renderPage('home');
+  } catch (e) {
+    showToast('❌ Erro: ' + e.message);
+  }
+}
 let toastTimer;
 function showToast(msg) {
   clearTimeout(toastTimer);
