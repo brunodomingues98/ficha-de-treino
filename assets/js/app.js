@@ -226,6 +226,10 @@ function renderPage(page, params = {}) {
       treinoSessaoAtiva = false;
       wrap.innerHTML = renderHome();
       break;
+    case 'treinos':
+      treinoSessaoAtiva = false;
+      wrap.innerHTML = renderListaTreinos();
+      break;
     case 'treino':
       if (currentTreino !== params.id) treinoSessaoAtiva = false;
       wrap.innerHTML = renderTreinoPage(params.id);
@@ -236,7 +240,7 @@ function renderPage(page, params = {}) {
       treinoSessaoAtiva = false;
       wrap.innerHTML = renderPerfil();
       break;
-    default:          wrap.innerHTML = renderHome();
+    default: wrap.innerHTML = renderHome();
   }
 
   appMain.appendChild(wrap);
@@ -244,6 +248,29 @@ function renderPage(page, params = {}) {
 }
 
 // ── HOME ────────────────────────────────────────────────────
+// Dicas rotativas — muda a cada dia
+const DICAS = [
+  { icon: '💧', titulo: 'Hidratação', texto: 'Beba pelo menos 2L de água por dia. Durante o treino, tome pequenos goles a cada 15-20 minutos.' },
+  { icon: '😴', titulo: 'Descanso', texto: 'O músculo cresce no repouso, não durante o treino. Priorize 7-9h de sono por noite.' },
+  { icon: '🥩', titulo: 'Proteína', texto: 'Consuma 1,6 a 2g de proteína por kg de peso para hipertrofia. Distribua ao longo do dia.' },
+  { icon: '🔥', titulo: 'Aquecimento', texto: 'Dedique 5-10 minutos de aquecimento antes de cada treino para evitar lesões.' },
+  { icon: '📈', titulo: 'Progressão', texto: 'Aumente a carga gradualmente — 2-5% por semana. A progressão de carga é o principal gatilho de hipertrofia.' },
+  { icon: '🍌', titulo: 'Pré-treino', texto: 'Consuma carboidratos 1-2h antes do treino. Banana, batata doce e aveia são ótimas opções.' },
+  { icon: '⏱', titulo: 'Descanso entre séries', texto: 'Para hipertrofia, descanse 60-90s entre séries. Para força, 2-4 minutos. Respeite esse tempo.' },
+  { icon: '🧘', titulo: 'Mobilidade', texto: 'Reserve 10 minutos após o treino para alongamento. Melhora a recuperação e previne encurtamentos.' },
+  { icon: '🥗', titulo: 'Pós-treino', texto: 'Consuma proteína + carboidrato nas 2h após o treino. Essa janela é crucial para a recuperação muscular.' },
+  { icon: '📅', titulo: 'Consistência', texto: 'Resultados vêm da consistência, não da intensidade. Treinar 3x por semana por 1 ano supera qualquer semana perfeita.' },
+  { icon: '💊', titulo: 'Creatina', texto: 'A creatina é o suplemento mais estudado e seguro. 3-5g por dia, sem ciclar. Consulte um profissional.' },
+  { icon: '🫀', titulo: 'Cardio', texto: 'Cardio moderado (150 min/semana) melhora a recuperação muscular e a saúde cardiovascular.' },
+  { icon: '🍳', titulo: 'Café da manhã', texto: 'Um café da manhã rico em proteínas aumenta a saciedade e melhora o desempenho no treino matinal.' },
+  { icon: '🧠', titulo: 'Conexão mente-músculo', texto: 'Concentre-se no músculo que está trabalhando durante o exercício. Isso aumenta a ativação muscular em até 20%.' },
+];
+
+function getDicaDoDia() {
+  const idx = new Date().getDate() % DICAS.length;
+  return DICAS[idx];
+}
+
 function renderHome() {
   const nome = userData?.name?.split(' ')[0]
              || currentUser?.email?.split('@')[0]
@@ -251,11 +278,12 @@ function renderHome() {
 
   const ids = Object.keys(TREINOS);
   const hoje = new Date().toISOString().split('T')[0];
+  const dica = getDicaDoDia();
 
   const cards = ids.length ? ids.map((id, idx) => {
     const t = TREINOS[id];
     const vencido = t.dataFim && t.dataFim < hoje;
-    const letra = String.fromCharCode(65 + idx); // A, B, C... para exibição visual
+    const letra = String.fromCharCode(65 + idx);
     return `
       <div class="treino-card" data-treino="${id}">
         <div class="treino-card-icon">${vencido ? '⏳' : '💪'}</div>
@@ -267,7 +295,9 @@ function renderHome() {
   }).join('') : `
     <div class="empty-state" style="grid-column:1/-1">
       <div class="icon">📋</div>
-      <p>Seu professor ainda não montou nenhum treino.<br>Volte em breve!</p>
+      <p>${userData?.role === 'autonomo'
+        ? 'Nenhum treino ainda. Crie um no seu perfil!'
+        : 'Seu professor ainda não montou nenhum treino.<br>Volte em breve!'}</p>
     </div>
   `;
 
@@ -301,10 +331,71 @@ function renderHome() {
 
     <p class="section-title">SEUS TREINOS</p>
     <div class="treino-cards">${cards}</div>
+
+    <p class="section-title">💡 DICA DO DIA</p>
+    <div style="padding:0 16px 24px">
+      <div class="suplem-card" style="display:flex;gap:14px;align-items:flex-start">
+        <div style="font-size:32px;flex-shrink:0">${dica.icon}</div>
+        <div>
+          <div class="suplem-nome">${dica.titulo}</div>
+          <div class="suplem-obs" style="border-top:none;padding-top:4px">${dica.texto}</div>
+        </div>
+      </div>
+    </div>
   `;
 }
 
-// ── TREINO ──────────────────────────────────────────────────
+// ── LISTA DE TREINOS (aba "Treinos") ─────────────────────────
+function renderListaTreinos() {
+  const ids = Object.keys(TREINOS);
+  const hoje = new Date().toISOString().split('T')[0];
+
+  return `
+    <div class="home-greeting" style="padding-top:20px">
+      <h1 style="font-size:26px">💪 <span>Meus Treinos</span></h1>
+    </div>
+
+    <div style="padding:0 16px;display:flex;flex-direction:column;gap:10px;padding-bottom:24px">
+      ${ids.length ? ids.map((id, idx) => {
+        const t = TREINOS[id];
+        const count = t.exercicios?.length || 0;
+        const vencido = t.dataFim && t.dataFim < hoje;
+        const letra = String.fromCharCode(65 + idx);
+        return `
+          <div class="aluno-card" data-treino-id="${id}" style="cursor:pointer">
+            <div class="aluno-avatar" style="${vencido ? 'background:rgba(220,38,38,.3)' : ''}">${letra}</div>
+            <div class="aluno-info">
+              <div class="aluno-nome">${t.nome}</div>
+              <div class="aluno-email">${count} exercício${count !== 1 ? 's' : ''}</div>
+              ${t.dataInicio && t.dataFim ? `
+                <div class="aluno-meta" style="color:${vencido ? '#f87171' : 'var(--gold)'}">
+                  ${vencido ? '⚠️ Vencido' : '✅ Vigente'} · ${formatarDataBR(t.dataInicio)} – ${formatarDataBR(t.dataFim)}
+                </div>` : ''}
+            </div>
+            <span class="aluno-chevron">›</span>
+          </div>
+        `;
+      }).join('') : `
+        <div class="empty-state">
+          <div class="icon">📋</div>
+          <p>${userData?.role === 'autonomo'
+            ? 'Nenhum treino ainda. Crie um no seu perfil!'
+            : 'Seu professor ainda não montou nenhum treino.'}</p>
+        </div>
+      `}
+    </div>
+  `;
+}
+
+function bindListaTreinos() {
+  document.querySelectorAll('[data-treino-id]').forEach(card => {
+    card.addEventListener('click', () => {
+      renderPage('treino', { id: card.dataset.treinoId });
+    });
+  });
+}
+
+
 function formatarDataBR(isoDate) {
   if (!isoDate) return '';
   const [ano, mes, dia] = isoDate.split('-');
@@ -424,10 +515,15 @@ function renderTreinoPage(id) {
       </div>
     </div>
 
-    <div style="padding:0 16px 16px">
+    <div style="padding:0 16px 16px;display:flex;flex-direction:column;gap:8px">
       <button class="btn-treino-toggle ${treinoSessaoAtiva ? 'ativo' : ''}" id="btn-toggle-treino">
         ${treinoSessaoAtiva ? '⏹ Finalizar Treino' : '▶ Iniciar Treino'}
       </button>
+      ${userData?.role === 'autonomo' ? `
+        <button class="btn-secondary" id="btn-editar-este-treino" style="font-size:13px;padding:10px">
+          ✏️ Editar este treino
+        </button>
+      ` : ''}
     </div>
 
     <div class="exercicios-list">${exercicios}</div>
@@ -464,8 +560,15 @@ function renderNutricao(activeTab = 'suplemenacao') {
 
 function renderSupl() {
   const suplementos = userData?.nutricao?.suplementos || [];
+  const isAutonomo = userData?.role === 'autonomo';
   if (!suplementos.length) {
-    return `<div class="empty-state"><div class="icon">💊</div><p>Seu professor ainda não cadastrou suplementos.</p></div>`;
+    return isAutonomo
+      ? `<div class="empty-state">
+           <div class="icon">💊</div>
+           <p>Nenhuma suplementação cadastrada ainda.</p>
+           <p style="font-size:12px;color:var(--text-muted);margin-top:8px">Gere um plano nutricional completo com a IA abaixo.</p>
+         </div>`
+      : `<div class="empty-state"><div class="icon">💊</div><p>Seu professor ainda não cadastrou suplementos.</p></div>`;
   }
   return suplementos.map(s => `
     <div class="suplem-card">
@@ -484,18 +587,50 @@ function renderSupl() {
 
 function renderDieta() {
   const refeicoes = userData?.nutricao?.refeicoes || [];
+  const isAutonomo = userData?.role === 'autonomo';
+
   if (!refeicoes.length) {
+    if (isAutonomo) {
+      const perfil = userData?.perfil || {};
+      return `
+        <div class="empty-state" style="padding-bottom:8px">
+          <div class="icon">🥗</div>
+          <p>Nenhum plano alimentar ainda.</p>
+        </div>
+        <div style="padding:0 0 16px">
+          <div class="suplem-card" style="text-align:center">
+            <div style="font-size:32px;margin-bottom:8px">🤖</div>
+            <div class="suplem-nome" style="text-align:center;margin-bottom:6px">Gerar dieta com IA</div>
+            <div class="suplem-obs" style="border-top:none;padding-top:0;text-align:center;margin-bottom:14px">
+              Baseado no seu perfil (${perfil.objetivo || 'objetivo'}, ${perfil.peso || '?'}kg, ${perfil.idade || '?'} anos),
+              a IA vai montar um plano alimentar personalizado pra você.
+            </div>
+            <button class="btn-primary" id="btn-gerar-dieta-ia">✨ Gerar meu plano alimentar</button>
+          </div>
+        </div>
+      `;
+    }
     return `<div class="empty-state"><div class="icon">🥗</div><p>Seu professor ainda não cadastrou a dieta.</p></div>`;
   }
-  return refeicoes.map(m => `
-    <div class="meal-card">
-      <div class="meal-time">${m.horario}</div>
-      <div class="meal-info">
-        <div class="meal-nome">${m.ref}</div>
-        ${(m.opcoes || []).map(o => `<div class="meal-opcao">${o}</div>`).join('')}
+
+  return `
+    ${isAutonomo ? `
+      <div style="margin-bottom:12px">
+        <button class="btn-secondary" id="btn-regenerar-dieta" style="font-size:12px;padding:8px">
+          🤖 Gerar nova dieta com IA
+        </button>
       </div>
-    </div>
-  `).join('');
+    ` : ''}
+    ${refeicoes.map(m => `
+      <div class="meal-card">
+        <div class="meal-time">${m.horario}</div>
+        <div class="meal-info">
+          <div class="meal-nome">${m.ref}</div>
+          ${(m.opcoes || []).map(o => `<div class="meal-opcao">${o}</div>`).join('')}
+        </div>
+      </div>
+    `).join('')}
+  `;
 }
 
 // ── PERFIL ──────────────────────────────────────────────────
@@ -625,6 +760,7 @@ function renderPerfil() {
 function bindEvents(page, params) {
   switch (page) {
     case 'home':    bindHome();            break;
+    case 'treinos': bindListaTreinos();    break;
     case 'treino':  bindTreino(params.id); break;
     case 'nutricao':bindNutricao();        break;
     case 'perfil':  bindPerfil();          break;
@@ -641,11 +777,16 @@ function bindHome() {
   });
 }
 
-function bindTreino(letra) {
+function bindTreino(id) {
   // botão voltar
   document.getElementById('btn-back')?.addEventListener('click', () => {
     setActiveNav('home');
     renderPage('home');
+  });
+
+  // botão editar treino (só autônomo)
+  document.getElementById('btn-editar-este-treino')?.addEventListener('click', () => {
+    abrirEditorBuilder(id);
   });
 
   // botão iniciar/finalizar treino
@@ -653,7 +794,7 @@ function bindTreino(letra) {
     if (!treinoSessaoAtiva) {
       treinoSessaoAtiva = true;
       showToast('▶ Treino iniciado! Bom treino 💪');
-      renderPage('treino', { letra });
+      renderPage('treino', { id });
     } else {
       treinoSessaoAtiva = false;
       await marcarTreinoConcluidoHoje();
@@ -764,9 +905,71 @@ function bindNutricao() {
         t.classList.toggle('active', t.dataset.tab === active));
       document.getElementById('nutri-body').innerHTML =
         active === 'suplemenacao' ? renderSupl() : renderDieta();
+      bindNutricaoIA();
     });
   });
+  bindNutricaoIA();
 }
+
+function bindNutricaoIA() {
+  document.getElementById('btn-gerar-dieta-ia')?.addEventListener('click', gerarDietaIA);
+  document.getElementById('btn-regenerar-dieta')?.addEventListener('click', gerarDietaIA);
+}
+
+async function gerarDietaIA() {
+  const btn = document.getElementById('btn-gerar-dieta-ia') ||
+              document.getElementById('btn-regenerar-dieta');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Gerando sua dieta...'; }
+
+  const perfil = userData?.perfil || {};
+  const objetivo = { hipertrofia: 'ganho de massa muscular', emagrecimento: 'perda de peso', condicionamento: 'condicionamento físico' }[perfil.objetivo] || perfil.objetivo;
+  const prompt = `Crie um plano alimentar diário em JSON para uma pessoa com as seguintes características:
+- Gênero: ${perfil.genero || 'não informado'}
+- Idade: ${perfil.idade || '?'} anos
+- Peso: ${perfil.peso || '?'} kg
+- Altura: ${perfil.altura || '?'} cm
+- Objetivo: ${objetivo || 'não informado'}
+- Nível de atividade: ${perfil.nivel || 'intermediário'}
+
+Retorne APENAS um JSON válido, sem texto antes ou depois, no seguinte formato:
+{
+  "refeicoes": [
+    { "horario": "07:00", "ref": "Café da Manhã", "opcoes": ["opção 1", "opção 2", "opção 3"] },
+    { "horario": "10:00", "ref": "Lanche da Manhã", "opcoes": ["opção 1", "opção 2"] }
+  ],
+  "suplementos": [
+    { "nome": "Whey Protein", "quantidade": "30g", "horario": "Pós-treino", "dias": "Dias de treino", "obs": "Misturar com água ou leite" }
+  ]
+}
+Inclua 5-6 refeições e os principais suplementos recomendados para o objetivo. As opções devem ser práticas e acessíveis no Brasil.`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await response.json();
+    const texto = data.content?.map(i => i.text || '').join('');
+    const jsonLimpo = texto.replace(/```json|```/g, '').trim();
+    const nutricao = JSON.parse(jsonLimpo);
+
+    await updateDoc(doc(db, 'users', currentUser.uid), { nutricao });
+    userData.nutricao = nutricao;
+    showToast('✅ Dieta gerada com sucesso!');
+    renderPage('nutricao');
+  } catch (e) {
+    console.error('Erro ao gerar dieta:', e);
+    showToast('❌ Erro ao gerar dieta. Tente novamente.');
+    if (btn) { btn.disabled = false; btn.textContent = '✨ Gerar meu plano alimentar'; }
+  }
+}
+
 
 function bindPerfil() {
   document.getElementById('btn-logout-profile')?.addEventListener('click', doLogout);
