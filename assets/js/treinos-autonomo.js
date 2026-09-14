@@ -16,8 +16,15 @@ function ex(nome, numSeries, repeticoes, descansoSegundos) {
            series: `${numSeries}x${repeticoes}` };
 }
 
-function filtrar(nomes) {
-  return nomes.map(args => ex(...args)).filter(Boolean);
+function filtrar(lista) {
+  return lista.map(item => {
+    if (!item) return null;
+    // Já é um objeto de exercício processado
+    if (typeof item === 'object' && item.id) return item;
+    // É um array [nome, series, reps, descanso]
+    if (Array.isArray(item)) return ex(...item);
+    return null;
+  }).filter(Boolean);
 }
 
 // ── Blocos de exercícios por grupo ────────────────────────
@@ -122,111 +129,59 @@ const ALONGAMENTO = [
 
 // ── Gerador principal ─────────────────────────────────────
 export function gerarTreinos(perfil) {
-  const { objetivo, nivel, genero } = perfil;
+  const { objetivo, nivel, genero, diasSemana = 3 } = perfil;
   const avancado = nivel === 'avancado';
   const intermediario = nivel === 'intermediario';
   const feminino = genero === 'feminino';
 
-  const treinos = {};
+  // Define blocos de treino baseados no objetivo
+  let blocos = [];
 
   if (objetivo === 'hipertrofia') {
-    // 3 treinos: Superior A, Inferior, Superior B
-    treinos[`treino_${Date.now()}_1`] = {
-      nome: 'Superior A — Peito e Tríceps',
-      exercicios: filtrar([
-        ...( avancado ? PEITO_AVANCADO : PEITO_BASICO ).map(e => e),
-        ...( avancado ? TRICEPS_AVANCADO : TRICEPS_BASICO ).map(e => e),
-      ].map(e => [e[0], e[1], e[2], e[3]])),
-      dataInicio: null, dataFim: null
-    };
-    treinos[`treino_${Date.now()}_2`] = {
-      nome: 'Inferior — Pernas e Glúteos',
-      exercicios: filtrar([
-        ...( feminino
-          ? GLUTEOS_BASICO.map(e => e)
-          : (avancado ? PERNAS_AVANCADO : PERNAS_BASICO).map(e => e)
-        )
-      ].map(e => [e[0], e[1], e[2], e[3]])),
-      dataInicio: null, dataFim: null
-    };
-    treinos[`treino_${Date.now()}_3`] = {
-      nome: 'Superior B — Costas e Bíceps',
-      exercicios: filtrar([
-        ...( avancado ? COSTAS_AVANCADO : COSTAS_BASICO ).map(e => e),
-        ...( avancado ? BICEPS_AVANCADO : BICEPS_BASICO ).map(e => e),
-      ].map(e => [e[0], e[1], e[2], e[3]])),
-      dataInicio: null, dataFim: null
-    };
-    if (avancado || intermediario) {
-      treinos[`treino_${Date.now()}_4`] = {
-        nome: 'Ombros e Abdômen',
-        exercicios: filtrar([
-          ...( avancado ? OMBRO_AVANCADO : OMBRO_BASICO ).map(e => e),
-        ].map(e => [e[0], e[1], e[2], e[3]])),
-        dataInicio: null, dataFim: null
-      };
-    }
-
+    blocos = [
+      { nome: 'Superior A — Peito e Tríceps', exercicios: [...(avancado ? PEITO_AVANCADO : PEITO_BASICO), ...(avancado ? TRICEPS_AVANCADO : TRICEPS_BASICO)] },
+      { nome: 'Inferior — Pernas e Glúteos',  exercicios: feminino ? GLUTEOS_BASICO : (avancado ? PERNAS_AVANCADO : PERNAS_BASICO) },
+      { nome: 'Superior B — Costas e Bíceps', exercicios: [...(avancado ? COSTAS_AVANCADO : COSTAS_BASICO), ...(avancado ? BICEPS_AVANCADO : BICEPS_BASICO)] },
+      { nome: 'Ombros e Abdômen',             exercicios: [...(avancado ? OMBRO_AVANCADO : OMBRO_BASICO)] },
+      { nome: 'Inferior B — Glúteos e Posterior', exercicios: [...GLUTEOS_BASICO, ...PERNAS_BASICO.slice(4)] },
+      { nome: 'Full Body — Força',            exercicios: [PEITO_BASICO[0], COSTAS_BASICO[0], PERNAS_BASICO[0], OMBRO_BASICO[0]] },
+      { nome: 'Acessórios e Core',            exercicios: [...BICEPS_BASICO, ...TRICEPS_BASICO] },
+    ];
   } else if (objetivo === 'emagrecimento') {
-    // 3 treinos com mais cardio
-    treinos[`treino_${Date.now()}_1`] = {
-      nome: 'Circuito Superior + Cardio',
-      exercicios: filtrar([
-        ...PEITO_BASICO.slice(0, 2).map(e => e),
-        ...COSTAS_BASICO.slice(0, 2).map(e => e),
-        ...( avancado ? CARDIO_AVANCADO : CARDIO_BASICO ).map(e => e),
-      ].map(e => [e[0], e[1], e[2], e[3]])),
-      dataInicio: null, dataFim: null
-    };
-    treinos[`treino_${Date.now()}_2`] = {
-      nome: 'Circuito Inferior + Cardio',
-      exercicios: filtrar([
-        ...PERNAS_BASICO.slice(0, 3).map(e => e),
-        ...( feminino ? GLUTEOS_BASICO.slice(0, 2) : [] ).map(e => e),
-        ...( avancado ? CARDIO_AVANCADO : CARDIO_BASICO ).map(e => e),
-      ].map(e => [e[0], e[1], e[2], e[3]])),
-      dataInicio: null, dataFim: null
-    };
-    treinos[`treino_${Date.now()}_3`] = {
-      nome: 'Full Body + Alongamento',
-      exercicios: filtrar([
-        ['Agachamento', 3, '15', 60],
-        ['Supino Reto', 3, '12', 60],
-        ['Remada com Barra', 3, '12', 60],
-        ...CARDIO_BASICO.map(e => e),
-        ...ALONGAMENTO.map(e => e),
-      ].map(e => [e[0], e[1], e[2], e[3]])),
-      dataInicio: null, dataFim: null
-    };
-
+    blocos = [
+      { nome: 'Circuito Superior + Cardio',   exercicios: [...PEITO_BASICO.slice(0,2), ...COSTAS_BASICO.slice(0,2), ...(avancado ? CARDIO_AVANCADO : CARDIO_BASICO)] },
+      { nome: 'Circuito Inferior + Cardio',   exercicios: [...PERNAS_BASICO.slice(0,3), ...(feminino ? GLUTEOS_BASICO.slice(0,2) : []), ...(avancado ? CARDIO_AVANCADO : CARDIO_BASICO)] },
+      { nome: 'Full Body + Cardio',           exercicios: [PERNAS_BASICO[0], PEITO_BASICO[0], COSTAS_BASICO[0], ...CARDIO_BASICO] },
+      { nome: 'Inferior + Cardio Intenso',    exercicios: [...GLUTEOS_BASICO.slice(0,2), ...PERNAS_BASICO.slice(0,2), ...CARDIO_AVANCADO.slice(0,3)] },
+      { nome: 'Superior + HIIT',              exercicios: [...OMBRO_BASICO.slice(0,2), ...BICEPS_BASICO, ...CARDIO_AVANCADO.slice(1,4)] },
+      { nome: 'Cardio e Mobilidade',          exercicios: [...CARDIO_BASICO, ...ALONGAMENTO] },
+      { nome: 'Full Body Leve',               exercicios: [PEITO_BASICO[0], COSTAS_BASICO[0], PERNAS_BASICO[0], ...CARDIO_BASICO.slice(0,2)] },
+    ];
   } else {
-    // condicionamento — mix equilibrado
-    treinos[`treino_${Date.now()}_1`] = {
-      nome: 'Força Superior',
-      exercicios: filtrar([
-        ...PEITO_BASICO.map(e => e),
-        ...COSTAS_BASICO.slice(0,2).map(e => e),
-        ...OMBRO_BASICO.slice(0,2).map(e => e),
-      ].map(e => [e[0], e[1], e[2], e[3]])),
-      dataInicio: null, dataFim: null
-    };
-    treinos[`treino_${Date.now()}_2`] = {
-      nome: 'Força Inferior',
-      exercicios: filtrar([
-        ...PERNAS_BASICO.map(e => e),
-        ...( feminino ? GLUTEOS_BASICO.slice(0,2) : [] ).map(e => e),
-      ].map(e => [e[0], e[1], e[2], e[3]])),
-      dataInicio: null, dataFim: null
-    };
-    treinos[`treino_${Date.now()}_3`] = {
-      nome: 'Cardio e Mobilidade',
-      exercicios: filtrar([
-        ...CARDIO_BASICO.map(e => e),
-        ...ALONGAMENTO.map(e => e),
-      ].map(e => [e[0], e[1], e[2], e[3]])),
-      dataInicio: null, dataFim: null
-    };
+    // condicionamento
+    blocos = [
+      { nome: 'Força Superior',    exercicios: [...PEITO_BASICO, ...COSTAS_BASICO.slice(0,2), ...OMBRO_BASICO.slice(0,2)] },
+      { nome: 'Força Inferior',    exercicios: [...PERNAS_BASICO, ...(feminino ? GLUTEOS_BASICO.slice(0,2) : [])] },
+      { nome: 'Cardio e Mobilidade', exercicios: [...CARDIO_BASICO, ...ALONGAMENTO] },
+      { nome: 'Superior + Braços', exercicios: [...PEITO_BASICO.slice(0,2), ...COSTAS_BASICO.slice(0,2), ...BICEPS_BASICO, ...TRICEPS_BASICO] },
+      { nome: 'Inferior + Core',   exercicios: [...PERNAS_BASICO.slice(0,4), ...GLUTEOS_BASICO.slice(0,2)] },
+      { nome: 'Full Body',         exercicios: [PEITO_BASICO[0], COSTAS_BASICO[0], PERNAS_BASICO[0], ...CARDIO_BASICO.slice(0,2)] },
+      { nome: 'Recuperação Ativa', exercicios: [...ALONGAMENTO, ...CARDIO_BASICO.slice(0,2)] },
+    ];
   }
+
+  // Pega apenas o número de blocos correspondente aos dias na semana
+  const treinosSelecionados = blocos.slice(0, Math.min(diasSemana, blocos.length));
+
+  const treinos = {};
+  treinosSelecionados.forEach((bloco, idx) => {
+    treinos[`treino_${Date.now()}_${idx}`] = {
+      nome: bloco.nome,
+      exercicios: filtrar(bloco.exercicios),
+      dataInicio: null,
+      dataFim: null
+    };
+  });
 
   return treinos;
 }

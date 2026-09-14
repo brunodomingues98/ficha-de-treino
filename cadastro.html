@@ -120,6 +120,7 @@
       <div class="step-dot" data-step="2"></div>
       <div class="step-dot" data-step="3"></div>
       <div class="step-dot" data-step="4"></div>
+      <div class="step-dot" data-step="5"></div>
     </div>
 
     <div class="login-error" id="erro-cadastro"></div>
@@ -216,8 +217,21 @@
       </div>
     </div>
 
-    <!-- STEP 4: Nível -->
+    <!-- STEP 4: Frequência semanal -->
     <div class="step" id="step-4">
+      <div class="step-title">Quantas vezes por semana?</div>
+      <div class="step-sub">Quantos dias você vai treinar</div>
+      <div class="range-group">
+        <div class="range-value"><span id="val-dias">3</span> <span class="range-unit">dias/semana</span></div>
+        <input type="range" id="range-dias" min="2" max="7" value="3" step="1">
+        <div class="range-minmax"><span>2 dias</span><span>7 dias</span></div>
+      </div>
+      <div id="dias-descricao" style="text-align:center;font-size:13px;color:var(--gold-light);margin-top:4px;min-height:20px"></div>
+      <button class="btn-primary" id="btn-step-4">Continuar →</button>
+    </div>
+
+    <!-- STEP 5: Nível -->
+    <div class="step" id="step-5">
       <div class="step-title">Qual o seu nível?</div>
       <div class="opcao-grid cols-1">
         <button class="opcao-btn" data-field="nivel" data-value="iniciante">
@@ -273,7 +287,7 @@ const db   = getFirestore(app);
 
 // ── Estado ─────────────────────────────────────────────────
 let currentStep = 0;
-const perfil = { nome:'', email:'', senha:'', genero:'', idade:25, altura:170, peso:70, objetivo:'', nivel:'' };
+const perfil = { nome:'', email:'', senha:'', genero:'', idade:25, altura:170, peso:70, objetivo:'', nivel:'', diasSemana: 3 };
 
 const errEl = document.getElementById('erro-cadastro');
 function showErro(msg) { errEl.textContent = msg; errEl.classList.add('show'); }
@@ -289,6 +303,26 @@ function hideErro() { errEl.classList.remove('show'); }
   });
 });
 
+// Range de dias na semana
+const rangeDias = document.getElementById('range-dias');
+const valDias   = document.getElementById('val-dias');
+const descDias  = document.getElementById('dias-descricao');
+const diasDesc  = {
+  2: 'Treino A e B — ótimo para iniciantes',
+  3: 'Treino A, B e C — equilíbrio perfeito',
+  4: 'Treino A, B, C e D — bom volume semanal',
+  5: 'Treino A, B, C, D e E — para avançados',
+  6: 'Treino A, B, C, D, E e F — alta frequência',
+  7: 'Treino todos os dias — máxima frequência',
+};
+rangeDias.addEventListener('input', () => {
+  const v = parseInt(rangeDias.value);
+  valDias.textContent = v;
+  descDias.textContent = diasDesc[v] || '';
+  perfil.diasSemana = v;
+});
+descDias.textContent = diasDesc[3];
+
 // ── Opções de seleção ─────────────────────────────────────
 document.querySelectorAll('.opcao-btn[data-field]').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -298,10 +332,8 @@ document.querySelectorAll('.opcao-btn[data-field]').forEach(btn => {
     btn.classList.add('selected');
     perfil[field] = btn.dataset.value;
 
-    // Avança automaticamente (exceto métricas)
-    if (field !== 'metricas') {
-      setTimeout(() => avancarStep(), 350);
-    }
+    // Avança automaticamente
+    setTimeout(() => avancarStep(), 350);
   });
 });
 
@@ -323,7 +355,7 @@ function irParaStep(n) {
 }
 
 function avancarStep() {
-  if (currentStep === 4) {
+  if (currentStep === 5) {
     criarConta();
   } else {
     irParaStep(currentStep + 1);
@@ -352,6 +384,12 @@ document.getElementById('btn-step-2').addEventListener('click', () => {
   irParaStep(3);
 });
 
+// ── Step 4: frequência semanal ────────────────────────────
+document.getElementById('btn-step-4').addEventListener('click', () => {
+  perfil.diasSemana = parseInt(document.getElementById('range-dias').value);
+  irParaStep(5);
+});
+
 // ── Criar conta + gerar treino ────────────────────────────
 async function criarConta() {
   document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
@@ -362,7 +400,6 @@ async function criarConta() {
     const cred = await createUserWithEmailAndPassword(auth, perfil.email, perfil.senha);
     await updateProfile(cred.user, { displayName: perfil.nome });
 
-    // Gera treinos baseados no perfil
     const treinos = gerarTreinos(perfil);
 
     await setDoc(doc(db, 'users', cred.user.uid), {
@@ -371,12 +408,13 @@ async function criarConta() {
       email: perfil.email,
       role: 'autonomo',
       perfil: {
-        genero:  perfil.genero,
-        idade:   perfil.idade,
-        altura:  perfil.altura,
-        peso:    perfil.peso,
-        objetivo: perfil.objetivo,
-        nivel:   perfil.nivel,
+        genero:      perfil.genero,
+        idade:       perfil.idade,
+        altura:      perfil.altura,
+        peso:        perfil.peso,
+        objetivo:    perfil.objetivo,
+        nivel:       perfil.nivel,
+        diasSemana:  perfil.diasSemana,
       },
       treinos,
       createdAt: new Date().toISOString()
