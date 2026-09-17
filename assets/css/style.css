@@ -1130,6 +1130,33 @@ ul { list-style: none; }
 
 .form-stack { display: flex; flex-direction: column; gap: 12px; }
 
+/* ── CARD DE LISTA (usado na aba Treinos do aluno) ────────── */
+.aluno-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.aluno-card:active { transform: scale(.98); }
+.aluno-avatar {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: var(--grad-brand);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 15px; color: #fff;
+  flex-shrink: 0;
+}
+.aluno-info { flex: 1; min-width: 0; }
+.aluno-nome { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+.aluno-email { font-size: 12px; color: var(--text-muted); }
+.aluno-meta { font-size: 11px; color: var(--gold); margin-top: 3px; font-weight: 600; }
+.aluno-chevron { color: var(--text-muted); font-size: 18px; }
+
 /* ── UTILS ──────────────────────────────────────────────── */
 .hidden { display: none !important; }
 
@@ -1177,7 +1204,47 @@ ul { list-style: none; }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── SEMANA TRACKER (linha do tempo semanal) ──────────────── */
+/* ── ALERTA DE ATUALIZAÇÃO DE TREINO ───────────────────────── */
+.alerta-treino {
+  margin: 0 16px 12px;
+  background: linear-gradient(135deg, rgba(124,58,237,.15) 0%, rgba(247,207,73,.1) 100%);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  animation: bannerUp .3s cubic-bezier(.34,1.56,.64,1);
+}
+.alerta-treino-icon { font-size: 28px; flex-shrink: 0; }
+.alerta-treino-texto {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.alerta-treino-texto strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gold);
+}
+.alerta-treino-texto span {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+.alerta-btn {
+  flex-shrink: 0;
+  background: var(--grad-brand);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-family: inherit;
+  white-space: nowrap;
+}
 .semana-tracker {
   margin: 0 16px 8px;
   background: var(--grad-card);

@@ -248,30 +248,136 @@ function renderPage(page, params = {}) {
 }
 
 // ── HOME ────────────────────────────────────────────────────
-// Dicas rotativas — muda a cada dia
-const DICAS = [
-  { icon: '💧', titulo: 'Hidratação', texto: 'Beba pelo menos 2L de água por dia. Durante o treino, tome pequenos goles a cada 15-20 minutos.' },
-  { icon: '😴', titulo: 'Descanso', texto: 'O músculo cresce no repouso, não durante o treino. Priorize 7-9h de sono por noite.' },
-  { icon: '🥩', titulo: 'Proteína', texto: 'Consuma 1,6 a 2g de proteína por kg de peso para hipertrofia. Distribua ao longo do dia.' },
-  { icon: '🔥', titulo: 'Aquecimento', texto: 'Dedique 5-10 minutos de aquecimento antes de cada treino para evitar lesões.' },
-  { icon: '📈', titulo: 'Progressão', texto: 'Aumente a carga gradualmente — 2-5% por semana. A progressão de carga é o principal gatilho de hipertrofia.' },
-  { icon: '🍌', titulo: 'Pré-treino', texto: 'Consuma carboidratos 1-2h antes do treino. Banana, batata doce e aveia são ótimas opções.' },
-  { icon: '⏱', titulo: 'Descanso entre séries', texto: 'Para hipertrofia, descanse 60-90s entre séries. Para força, 2-4 minutos. Respeite esse tempo.' },
-  { icon: '🧘', titulo: 'Mobilidade', texto: 'Reserve 10 minutos após o treino para alongamento. Melhora a recuperação e previne encurtamentos.' },
-  { icon: '🥗', titulo: 'Pós-treino', texto: 'Consuma proteína + carboidrato nas 2h após o treino. Essa janela é crucial para a recuperação muscular.' },
-  { icon: '📅', titulo: 'Consistência', texto: 'Resultados vêm da consistência, não da intensidade. Treinar 3x por semana por 1 ano supera qualquer semana perfeita.' },
-  { icon: '💊', titulo: 'Creatina', texto: 'A creatina é o suplemento mais estudado e seguro. 3-5g por dia, sem ciclar. Consulte um profissional.' },
-  { icon: '🫀', titulo: 'Cardio', texto: 'Cardio moderado (150 min/semana) melhora a recuperação muscular e a saúde cardiovascular.' },
-  { icon: '🍳', titulo: 'Café da manhã', texto: 'Um café da manhã rico em proteínas aumenta a saciedade e melhora o desempenho no treino matinal.' },
-  { icon: '🧠', titulo: 'Conexão mente-músculo', texto: 'Concentre-se no músculo que está trabalhando durante o exercício. Isso aumenta a ativação muscular em até 20%.' },
-];
-
+// Dicas personalizadas usando dados do perfil
 function getDicaDoDia() {
-  const idx = new Date().getDate() % DICAS.length;
-  return DICAS[idx];
+  const perfil = userData?.perfil || {};
+  const peso   = perfil.peso   || 70;
+  const altura = perfil.altura || 170;
+  const idade  = perfil.idade  || 25;
+  const objetivo = perfil.objetivo || 'condicionamento';
+
+  // Cálculos personalizados
+  const agua        = (peso * 0.035).toFixed(1);          // 35ml/kg
+  const proteina    = (peso * 1.8).toFixed(0);            // 1.8g/kg para hipertrofia
+  const proteinaMin = (peso * 1.6).toFixed(0);
+  const imc         = (peso / ((altura / 100) ** 2)).toFixed(1);
+  const imcStatus   = imc < 18.5 ? 'abaixo do peso' : imc < 25 ? 'peso normal' : imc < 30 ? 'sobrepeso' : 'obesidade';
+  const kcal        = objetivo === 'emagrecimento'
+    ? Math.round(peso * 24 * 0.85)   // déficit calórico
+    : objetivo === 'hipertrofia'
+    ? Math.round(peso * 24 * 1.1)    // superávit
+    : Math.round(peso * 24);         // manutenção
+
+  const dicas = [
+    {
+      icon: '💧',
+      titulo: 'Sua meta de água hoje',
+      texto: `Com ${peso}kg, seu corpo precisa de aproximadamente <strong>${agua}L de água por dia</strong>. Divida em 8-10 copos ao longo do dia, e beba um copo extra para cada 30 minutos de treino.`
+    },
+    {
+      icon: '🥩',
+      titulo: 'Sua meta de proteína',
+      texto: `Para seu objetivo, consuma entre <strong>${proteinaMin}g e ${proteina}g de proteína por dia</strong>. Distribua em 4-5 refeições de ~${Math.round(parseInt(proteina)/4)}g cada para maximizar a síntese proteica.`
+    },
+    {
+      icon: '🔥',
+      titulo: 'Sua necessidade calórica',
+      texto: `Baseado no seu peso e objetivo, sua meta é de aproximadamente <strong>${kcal} kcal por dia</strong>. ${objetivo === 'emagrecimento' ? 'Déficit moderado para perda de gordura sem perder músculo.' : objetivo === 'hipertrofia' ? 'Superávit moderado para ganho muscular sem acumular gordura.' : 'Manutenção para equilíbrio e condicionamento.'}`
+    },
+    {
+      icon: '📊',
+      titulo: 'Seu IMC atual',
+      texto: `Seu IMC é <strong>${imc}</strong> (${imcStatus}). Lembre que o IMC não considera massa muscular — use como referência, não como diagnóstico. Foco na composição corporal é mais importante.`
+    },
+    {
+      icon: '🧘',
+      titulo: 'Alongamento antes de dormir',
+      texto: `Dedique 10 minutos antes de dormir para alongar os principais grupos musculares trabalhados hoje. Isso reduz a DOMS (dor muscular tardia) e melhora a qualidade do sono.`
+    },
+    {
+      icon: '😴',
+      titulo: 'Sono e crescimento muscular',
+      texto: `80% da liberação de GH (hormônio do crescimento) acontece durante o sono. Priorize 7-9h por noite — tão importante quanto o treino e a dieta.`
+    },
+    {
+      icon: '⚖️',
+      titulo: 'Progressão de carga',
+      texto: `Tente aumentar 2-5% de carga a cada 1-2 semanas no mesmo exercício. Registre sua carga atual em cada exercício do app para acompanhar sua evolução.`
+    },
+    {
+      icon: '🍌',
+      titulo: 'Pré-treino ideal',
+      texto: `Coma 30-60g de carboidratos simples 30-60 minutos antes de treinar. Uma banana média tem ~25g — prática, barata e eficiente. Evite gorduras e fibras em excesso antes do treino.`
+    },
+    {
+      icon: '⏱',
+      titulo: 'Respeite o descanso',
+      texto: `O tempo de descanso entre séries não é opcional. Para hipertrofia, 60-90s. Para força, 2-3 minutos. O app já tem o timer — use-o!`
+    },
+    {
+      icon: '🫀',
+      titulo: 'Frequência cardíaca no cardio',
+      texto: `Para queima de gordura, mantenha 60-70% da sua FCmáx (${Math.round((220 - idade) * 0.65)}-${Math.round((220 - idade) * 0.75)} bpm para sua idade). Acima disso, o corpo usa mais glicose que gordura.`
+    },
+    {
+      icon: '💊',
+      titulo: 'Creatina — o básico',
+      texto: `3-5g de creatina monohidratada por dia, todos os dias (inclusive dias sem treino), em qualquer horário. Não precisa ciclar. Efeito visível em 2-4 semanas. Beba mais água ao usar.`
+    },
+    {
+      icon: '📅',
+      titulo: 'Consistência acima de tudo',
+      texto: `Treinar 3x por semana por 12 meses é infinitamente melhor que treinar 6x por semana por 2 meses e parar. A consistência é o único atalho real para resultados duradouros.`
+    },
+    {
+      icon: '🥗',
+      titulo: 'A regra do prato',
+      texto: `Monte seu prato com ½ de vegetais, ¼ de proteína e ¼ de carboidratos complexos. Simples, nutritivo e fácil de seguir sem precisar contar calorias no dia a dia.`
+    },
+    {
+      icon: '🧠',
+      titulo: 'Conexão mente-músculo',
+      texto: `Durante cada repetição, concentre-se no músculo que está trabalhando. Estudos mostram aumento de 20-30% na ativação muscular apenas com foco mental. Qualidade supera quantidade.`
+    },
+  ];
+
+  const idx = new Date().getDate() % dicas.length;
+  return dicas[idx];
 }
 
-function renderHome() {
+
+// ── ALERTA DE ATUALIZAÇÃO DE TREINO (45 dias) ────────────────
+function verificarAlertaAtualizacaoTreino() {
+  const treinos = Object.values(TREINOS);
+  if (!treinos.length) return null;
+
+  // Pega a data de criação mais antiga dos treinos ativos
+  // Usa createdAt do userData como fallback
+  const criadoEm = userData?.createdAt
+    ? new Date(userData.createdAt)
+    : null;
+
+  if (!criadoEm) return null;
+
+  const hoje = new Date();
+  const diasDesde = Math.floor((hoje - criadoEm) / (1000 * 60 * 60 * 24));
+
+  // Checa se o alerta foi dispensado recentemente (guarda no localStorage)
+  const dispensadoEm = localStorage.getItem('alerta-treino-dispensado');
+  if (dispensadoEm) {
+    const diasDispensado = Math.floor((hoje - new Date(dispensadoEm)) / (1000 * 60 * 60 * 24));
+    if (diasDispensado < 45) return null;
+  }
+
+  if (diasDesde >= 45) {
+    const semanas = Math.floor(diasDesde / 7);
+    return `Você está com o mesmo treino há ${semanas} semanas. Seu corpo já se adaptou — é hora de variar os exercícios para continuar evoluindo!`;
+  }
+
+  return null;
+}
+
+
   const nome = userData?.name?.split(' ')[0]
              || currentUser?.email?.split('@')[0]
              || 'Atleta';
@@ -311,6 +417,9 @@ function renderHome() {
     </div>
   `).join('');
 
+  // ── Notificação de atualização de treino (45 dias) ──────
+  const alertaTreino = verificarAlertaAtualizacaoTreino();
+
   return `
     <div class="hero-banner">
       <img src="/assets/images/logoKB.jpg" alt="Banner" loading="lazy">
@@ -320,6 +429,17 @@ function renderHome() {
       <p class="label">Bom treino,</p>
       <h1>Olá, <span>${nome}</span> 👋</h1>
     </div>
+
+    ${alertaTreino ? `
+    <div class="alerta-treino">
+      <div class="alerta-treino-icon">🔄</div>
+      <div class="alerta-treino-texto">
+        <strong>Hora de renovar seu treino!</strong>
+        <span>${alertaTreino}</span>
+      </div>
+      ${userData?.role === 'autonomo' ? `<button class="alerta-btn" id="btn-alerta-editar">Editar</button>` : ''}
+    </div>
+    ` : ''}
 
     <div class="semana-tracker">
       <div class="semana-tracker-header">
@@ -768,6 +888,20 @@ function bindEvents(page, params) {
 }
 
 function bindHome() {
+  // Botão dispensar alerta
+  document.getElementById('btn-alerta-editar')?.addEventListener('click', () => {
+    renderPage('perfil');
+    setActiveNav('perfil');
+  });
+
+  // Dispensar alerta ao clicar fora do botão (no próprio banner)
+  document.querySelector('.alerta-treino')?.addEventListener('click', e => {
+    if (!e.target.closest('.alerta-btn')) {
+      localStorage.setItem('alerta-treino-dispensado', new Date().toISOString());
+      document.querySelector('.alerta-treino')?.remove();
+    }
+  });
+
   document.querySelectorAll('.treino-card').forEach(card => {
     card.addEventListener('click', () => {
       const id = card.dataset.treino;
