@@ -378,6 +378,7 @@ function verificarAlertaAtualizacaoTreino() {
 }
 
 
+function renderHome() {
   const nome = userData?.name?.split(' ')[0]
              || currentUser?.email?.split('@')[0]
              || 'Atleta';
@@ -735,9 +736,12 @@ function renderDieta() {
 
   return `
     ${isAutonomo ? `
-      <div style="margin-bottom:12px">
-        <button class="btn-secondary" id="btn-regenerar-dieta" style="font-size:12px;padding:8px">
-          🤖 Gerar nova dieta com IA
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button class="btn-secondary" id="btn-regenerar-dieta" style="font-size:12px;padding:8px;flex:1">
+          🤖 Nova dieta com IA
+        </button>
+        <button class="btn-secondary" id="btn-editar-dieta" style="font-size:12px;padding:8px;flex:1">
+          ✏️ Editar dieta
         </button>
       </div>
     ` : ''}
@@ -1046,36 +1050,205 @@ function bindNutricao() {
 }
 
 function bindNutricaoIA() {
-  document.getElementById('btn-gerar-dieta-ia')?.addEventListener('click', gerarDietaIA);
-  document.getElementById('btn-regenerar-dieta')?.addEventListener('click', gerarDietaIA);
+  document.getElementById('btn-gerar-dieta-ia')?.addEventListener('click', abrirFormularioDieta);
+  document.getElementById('btn-regenerar-dieta')?.addEventListener('click', abrirFormularioDieta);
+  document.getElementById('btn-editar-dieta')?.addEventListener('click', abrirEditorDieta);
 }
 
-async function gerarDietaIA() {
+function abrirEditorDieta() {
+  const nutricao = userData?.nutricao || { refeicoes: [], suplementos: [] };
+  let refeicoes = JSON.parse(JSON.stringify(nutricao.refeicoes || []));
+  let suplementos = JSON.parse(JSON.stringify(nutricao.suplementos || []));
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'modal-editar-dieta';
+
+  function renderEditorHtml() {
+    return `
+      <div class="modal-sheet" style="max-height:92vh">
+        <div class="modal-handle"></div>
+        <div class="modal-title">✏️ Editar Dieta</div>
+
+        <p class="section-title" style="padding:0 0 8px">REFEIÇÕES</p>
+        <div id="editor-refeicoes" style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px">
+          ${refeicoes.map((r, i) => `
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px">
+              <div style="display:flex;gap:8px;margin-bottom:8px">
+                <input type="text" class="ed-ref-horario" data-idx="${i}" value="${r.horario||''}" placeholder="Horário"
+                  style="width:80px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px;color:#fff;font-family:inherit;font-size:12px">
+                <input type="text" class="ed-ref-nome" data-idx="${i}" value="${r.ref||''}" placeholder="Nome da refeição"
+                  style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px;color:#fff;font-family:inherit;font-size:12px">
+                <button class="btn-remove-ex ed-ref-del" data-idx="${i}">✕</button>
+              </div>
+              <textarea class="ed-ref-opcoes" data-idx="${i}" placeholder="Opções (uma por linha)"
+                style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px;color:#fff;font-family:inherit;font-size:12px;min-height:60px;resize:vertical">${(r.opcoes||[]).join('\n')}</textarea>
+            </div>
+          `).join('')}
+        </div>
+        <button class="btn-secondary" id="ed-add-ref" style="margin-bottom:16px;font-size:12px">+ Adicionar refeição</button>
+
+        <p class="section-title" style="padding:0 0 8px">SUPLEMENTOS</p>
+        <div id="editor-suplementos" style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px">
+          ${suplementos.map((s, i) => `
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px">
+              <div style="display:flex;gap:8px;margin-bottom:8px">
+                <input type="text" class="ed-sup-nome" data-idx="${i}" value="${s.nome||''}" placeholder="Nome"
+                  style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px;color:#fff;font-family:inherit;font-size:12px">
+                <input type="text" class="ed-sup-qtd" data-idx="${i}" value="${s.quantidade||''}" placeholder="Dose"
+                  style="width:70px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px;color:#fff;font-family:inherit;font-size:12px">
+                <button class="btn-remove-ex ed-sup-del" data-idx="${i}">✕</button>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <input type="text" class="ed-sup-horario" data-idx="${i}" value="${s.horario||''}" placeholder="Horário"
+                  style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px;color:#fff;font-family:inherit;font-size:12px">
+                <input type="text" class="ed-sup-dias" data-idx="${i}" value="${s.dias||''}" placeholder="Dias"
+                  style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px;color:#fff;font-family:inherit;font-size:12px">
+              </div>
+              <input type="text" class="ed-sup-obs" data-idx="${i}" value="${s.obs||''}" placeholder="Observações"
+                style="width:100%;margin-top:8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px;color:#fff;font-family:inherit;font-size:12px">
+            </div>
+          `).join('')}
+        </div>
+        <button class="btn-secondary" id="ed-add-sup" style="margin-bottom:16px;font-size:12px">+ Adicionar suplemento</button>
+
+        <button class="btn-primary" id="ed-salvar" style="width:100%">💾 Salvar dieta</button>
+      </div>
+    `;
+  }
+
+  overlay.innerHTML = renderEditorHtml();
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+  function bindEditor() {
+    overlay.querySelectorAll('.ed-ref-horario').forEach(el => el.addEventListener('input', () => { refeicoes[el.dataset.idx].horario = el.value; }));
+    overlay.querySelectorAll('.ed-ref-nome').forEach(el => el.addEventListener('input', () => { refeicoes[el.dataset.idx].ref = el.value; }));
+    overlay.querySelectorAll('.ed-ref-opcoes').forEach(el => el.addEventListener('input', () => { refeicoes[el.dataset.idx].opcoes = el.value.split('\n').filter(Boolean); }));
+    overlay.querySelectorAll('.ed-ref-del').forEach(btn => btn.addEventListener('click', () => { refeicoes.splice(parseInt(btn.dataset.idx),1); overlay.innerHTML = renderEditorHtml(); bindEditor(); }));
+    overlay.querySelectorAll('.ed-sup-nome').forEach(el => el.addEventListener('input', () => { suplementos[el.dataset.idx].nome = el.value; }));
+    overlay.querySelectorAll('.ed-sup-qtd').forEach(el => el.addEventListener('input', () => { suplementos[el.dataset.idx].quantidade = el.value; }));
+    overlay.querySelectorAll('.ed-sup-horario').forEach(el => el.addEventListener('input', () => { suplementos[el.dataset.idx].horario = el.value; }));
+    overlay.querySelectorAll('.ed-sup-dias').forEach(el => el.addEventListener('input', () => { suplementos[el.dataset.idx].dias = el.value; }));
+    overlay.querySelectorAll('.ed-sup-obs').forEach(el => el.addEventListener('input', () => { suplementos[el.dataset.idx].obs = el.value; }));
+    overlay.querySelectorAll('.ed-sup-del').forEach(btn => btn.addEventListener('click', () => { suplementos.splice(parseInt(btn.dataset.idx),1); overlay.innerHTML = renderEditorHtml(); bindEditor(); }));
+    overlay.querySelector('#ed-add-ref')?.addEventListener('click', () => { refeicoes.push({horario:'',ref:'',opcoes:[]}); overlay.innerHTML = renderEditorHtml(); bindEditor(); });
+    overlay.querySelector('#ed-add-sup')?.addEventListener('click', () => { suplementos.push({nome:'',quantidade:'',horario:'',dias:'',obs:''}); overlay.innerHTML = renderEditorHtml(); bindEditor(); });
+    overlay.querySelector('#ed-salvar')?.addEventListener('click', async () => {
+      try {
+        const nutricaoAtualizada = { refeicoes, suplementos };
+        await updateDoc(doc(db, 'users', currentUser.uid), { nutricao: nutricaoAtualizada });
+        userData.nutricao = nutricaoAtualizada;
+        overlay.remove();
+        showToast('✅ Dieta salva!');
+        renderPage('nutricao');
+      } catch(e) { showToast('❌ Erro ao salvar: ' + e.message); }
+    });
+  }
+  bindEditor();
+}
+
+function abrirFormularioDieta() {
+  const perfil = userData?.perfil || {};
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'modal-dieta-form';
+  overlay.innerHTML = `
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">🥗 Gerar Plano Alimentar</div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
+        Responda algumas perguntas para personalizar sua dieta.
+      </p>
+      <div class="form-stack">
+        <div class="field-group">
+          <label>Restrições alimentares</label>
+          <input type="text" id="dieta-restricoes" placeholder="Ex: lactose, glúten, vegetariano...">
+        </div>
+        <div class="field-group">
+          <label>Alimentos que não gosta</label>
+          <input type="text" id="dieta-nao-gosta" placeholder="Ex: fígado, beterraba...">
+        </div>
+        <div class="field-group">
+          <label>Quantas refeições por dia?</label>
+          <select id="dieta-refeicoes" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:11px;color:#fff;font-family:inherit;width:100%">
+            <option value="3">3 refeições</option>
+            <option value="4">4 refeições</option>
+            <option value="5" selected>5 refeições</option>
+            <option value="6">6 refeições</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Orçamento para alimentação</label>
+          <select id="dieta-orcamento" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:11px;color:#fff;font-family:inherit;width:100%">
+            <option value="baixo">Econômico (até R$30/dia)</option>
+            <option value="medio" selected>Moderado (R$30-60/dia)</option>
+            <option value="alto">Sem restrição de orçamento</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Você cozinha em casa?</label>
+          <select id="dieta-cozinha" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:11px;color:#fff;font-family:inherit;width:100%">
+            <option value="sim" selected>Sim, cozinho em casa</option>
+            <option value="parcial">Às vezes / marmita</option>
+            <option value="nao">Não, como fora</option>
+          </select>
+        </div>
+        <button class="btn-primary" id="btn-confirmar-dieta">✨ Gerar minha dieta</button>
+        <button class="btn-secondary" id="btn-cancelar-dieta">Cancelar</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.getElementById('btn-cancelar-dieta').addEventListener('click', () => overlay.remove());
+  document.getElementById('btn-confirmar-dieta').addEventListener('click', async () => {
+    const extras = {
+      restricoes:  document.getElementById('dieta-restricoes').value.trim(),
+      naoGosta:    document.getElementById('dieta-nao-gosta').value.trim(),
+      refeicoes:   document.getElementById('dieta-refeicoes').value,
+      orcamento:   document.getElementById('dieta-orcamento').value,
+      cozinha:     document.getElementById('dieta-cozinha').value,
+    };
+    overlay.remove();
+    await gerarDietaIA(extras);
+  });
+}
+
+async function gerarDietaIA(extras = {}) {
   const btn = document.getElementById('btn-gerar-dieta-ia') ||
               document.getElementById('btn-regenerar-dieta');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Gerando sua dieta...'; }
 
   const perfil = userData?.perfil || {};
-  const objetivo = { hipertrofia: 'ganho de massa muscular', emagrecimento: 'perda de peso', condicionamento: 'condicionamento físico' }[perfil.objetivo] || perfil.objetivo;
-  const prompt = `Crie um plano alimentar diário em JSON para uma pessoa com as seguintes características:
-- Gênero: ${perfil.genero || 'não informado'}
-- Idade: ${perfil.idade || '?'} anos
-- Peso: ${perfil.peso || '?'} kg
-- Altura: ${perfil.altura || '?'} cm
-- Objetivo: ${objetivo || 'não informado'}
-- Nível de atividade: ${perfil.nivel || 'intermediário'}
+  const objetivoMap = { hipertrofia: 'ganho de massa muscular', emagrecimento: 'perda de peso', condicionamento: 'condicionamento físico' };
+  const objetivo = objetivoMap[perfil.objetivo] || perfil.objetivo || 'condicionamento';
+  const orcamentoMap = { baixo: 'econômico (até R$30/dia, priorizando arroz, feijão, ovos, frango)', medio: 'moderado (R$30-60/dia)', alto: 'sem restrição de orçamento' };
+  const cozinhaMap = { sim: 'cozinha em casa', parcial: 'às vezes cozinha / usa marmita', nao: 'come fora ou pede comida' };
 
-Retorne APENAS um JSON válido, sem texto antes ou depois, no seguinte formato:
+  const prompt = `Crie um plano alimentar diário detalhado em JSON para uma pessoa com as seguintes características:
+- Gênero: ${perfil.genero || 'não informado'}
+- Idade: ${perfil.idade || 25} anos
+- Peso: ${perfil.peso || 70} kg
+- Altura: ${perfil.altura || 170} cm
+- Objetivo: ${objetivo}
+- Nível: ${perfil.nivel || 'intermediário'}
+- Restrições alimentares: ${extras.restricoes || 'nenhuma'}
+- Alimentos que não gosta: ${extras.naoGosta || 'nenhum'}
+- Número de refeições: ${extras.refeicoes || 5}
+- Orçamento: ${orcamentoMap[extras.orcamento] || 'moderado'}
+- Hábito de preparo: ${cozinhaMap[extras.cozinha] || 'cozinha em casa'}
+
+Retorne APENAS um JSON válido, sem markdown, sem texto antes ou depois:
 {
   "refeicoes": [
-    { "horario": "07:00", "ref": "Café da Manhã", "opcoes": ["opção 1", "opção 2", "opção 3"] },
-    { "horario": "10:00", "ref": "Lanche da Manhã", "opcoes": ["opção 1", "opção 2"] }
+    { "horario": "07:00", "ref": "Café da Manhã", "opcoes": ["opção completa 1 com quantidades", "opção completa 2 com quantidades", "opção completa 3 com quantidades"] }
   ],
   "suplementos": [
-    { "nome": "Whey Protein", "quantidade": "30g", "horario": "Pós-treino", "dias": "Dias de treino", "obs": "Misturar com água ou leite" }
+    { "nome": "Nome", "quantidade": "dose", "horario": "quando tomar", "dias": "frequência", "obs": "como usar" }
   ]
 }
-Inclua 5-6 refeições e os principais suplementos recomendados para o objetivo. As opções devem ser práticas e acessíveis no Brasil.`;
+Inclua ${extras.refeicoes || 5} refeições com 3 opções cada. Coloque quantidades (ex: "2 ovos mexidos + 2 fatias pão integral + 1 copo leite 200ml"). Suplementos baseados no objetivo. Tudo prático e acessível no Brasil.`;
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -1083,19 +1256,17 @@ Inclua 5-6 refeições e os principais suplementos recomendados para o objetivo.
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
+        max_tokens: 1500,
         messages: [{ role: 'user', content: prompt }]
       })
     });
-
     const data = await response.json();
     const texto = data.content?.map(i => i.text || '').join('');
     const jsonLimpo = texto.replace(/```json|```/g, '').trim();
     const nutricao = JSON.parse(jsonLimpo);
-
     await updateDoc(doc(db, 'users', currentUser.uid), { nutricao });
     userData.nutricao = nutricao;
-    showToast('✅ Dieta gerada com sucesso!');
+    showToast('✅ Plano alimentar gerado!');
     renderPage('nutricao');
   } catch (e) {
     console.error('Erro ao gerar dieta:', e);

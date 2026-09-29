@@ -1,6 +1,6 @@
 {
-  "name": "Ficha de Treino",
-  "short_name": "Ficha Treino",
+  "name": "Ponto Fit",
+  "short_name": "Ponto Fit",
   "description": "Acompanhe seus treinos e nutrição direto do professor",
   "start_url": "/index.html",
   "scope": "/",

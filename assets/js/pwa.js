@@ -35,7 +35,7 @@ function mostrarBannerInstalacao() {
   banner.innerHTML = `
     <div class="pwa-banner-icon">🏋️</div>
     <div class="pwa-banner-text">
-      <strong>Instalar Ficha de Treino</strong>
+      <strong>Instalar Ponto Fit</strong>
       <span>Acesse direto da tela inicial</span>
     </div>
     <button id="pwa-install-btn">Instalar</button>
@@ -82,7 +82,7 @@ function mostrarBannerIOS() {
   banner.innerHTML = `
     <div class="pwa-banner-icon">🏋️</div>
     <div class="pwa-banner-text">
-      <strong>Instalar Ficha de Treino</strong>
+      <strong>Instalar Ponto Fit</strong>
       <span>Toque em <strong>Compartilhar</strong> ⬆️ e depois em <strong>"Adicionar à Tela de Início"</strong></span>
     </div>
     <button id="pwa-dismiss-btn" aria-label="Fechar">✕</button>
