@@ -14,7 +14,7 @@ app nativo, sem loja de aplicativos.
 
 ## 🔗 Acesse o projeto
 
-👉 https://ponto-fit.vercel.app/login.html
+👉 _(adicione aqui o link do deploy na Vercel depois de publicar)_
 
 ---
 
