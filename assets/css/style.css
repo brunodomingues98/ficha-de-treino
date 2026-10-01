@@ -1132,6 +1132,123 @@ ul { list-style: none; }
 
 .form-stack { display: flex; flex-direction: column; gap: 12px; }
 
+/* Builder de treino: abas, busca e lista de exercícios */
+.exercicio-picker-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 0 0 12px;
+  scrollbar-width: none;
+}
+.exercicio-picker-tabs::-webkit-scrollbar { display: none; }
+
+.picker-tab {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--surface2);
+}
+.picker-tab.active { background: var(--grad-brand); color: #fff; border-color: transparent; }
+
+.picker-list { display: flex; flex-direction: column; gap: 6px; max-height: 280px; overflow-y: auto; margin-bottom: 16px; }
+
+.picker-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+.picker-item.selected { border-color: var(--gold); background: rgba(247,207,73,.08); }
+.picker-item.selected .picker-check { background: var(--gold); border-color: var(--gold); }
+
+.picker-thumb { width: 44px; height: 36px; border-radius: 6px; object-fit: cover; object-position: center; flex-shrink: 0; }
+.picker-nome { flex: 1; font-size: 13px; color: var(--text-primary); }
+.picker-check { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; }
+
+.picker-grupo-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--gold);
+  padding: 10px 4px 4px;
+  margin-top: 4px;
+  border-top: 1px solid var(--border);
+}
+.picker-grupo-label:first-child { border-top: none; padding-top: 0; }
+
+/* Lista de exercícios já adicionados ao treino */
+.treino-montado-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+
+.treino-montado-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+}
+.treino-montado-thumb { width: 40px; height: 32px; border-radius: 6px; object-fit: cover; object-position: center; flex-shrink: 0; }
+.treino-montado-nome { flex: 1; font-size: 13px; }
+.treino-montado-series {
+  width: 70px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 6px;
+  font-size: 12px;
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+.btn-remove-ex {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: rgba(220,38,38,.15);
+  color: #f87171;
+  font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Campos de séries/reps/descanso por exercício */
+.exercicio-params-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+.exercicio-param {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.exercicio-param label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.exercicio-param input,
+.exercicio-param select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 6px;
+  font-size: 13px;
+  color: var(--text-primary);
+  font-family: inherit;
+  width: 100%;
+}
+
 /* ── CARD DE LISTA (usado na aba Treinos do aluno) ────────── */
 .aluno-card {
   background: var(--surface);
