@@ -91,24 +91,32 @@ const GLUTEOS_BASICO = [
   ['Afundo', 3, '12', 75],
 ];
 
-// Sem exercícios cardio dedicados na biblioteca — usa compostos em circuito,
-// mais repetições e menos descanso para efeito de condicionamento.
-const CIRCUITO_BASICO = [
-  ['Agachamento', 3, '15', 30],
-  ['Leg Press', 3, '15', 30],
-  ['Afundo', 3, '15', 30],
+const CARDIO_BASICO = [
+  ['Esteira ergométrica', 1, '20 min', 0],
+  ['Bicicleta ergométrica', 1, '15 min', 0],
 ];
-const CIRCUITO_AVANCADO = [
-  ['Agachamento', 4, '20', 20],
-  ['Leg Press', 4, '20', 20],
-  ['Afundo', 4, '20', 20],
-  ['Panturrilha em pé', 3, '20', 20],
+const CARDIO_AVANCADO = [
+  ['Esteira ergométrica', 1, '30 min', 0],
+  ['Escada (step)', 1, '15 min', 0],
+  ['Bicicleta ergométrica', 1, '15 min', 0],
 ];
 
 const CORE_BASICO = [
   ['Prancha', 3, '30-45s', 45],
   ['Dead Bug', 3, '12', 45],
   ['Prancha lateral', 3, '20-30s', 45],
+];
+
+const CALISTENIA_BASICO = [
+  ['Flexão de braço', 3, '10-15', 60],
+  ['Agachamento', 3, '15-20', 45],
+  ['Dips na cadeira', 3, '10-12', 60],
+];
+const CALISTENIA_AVANCADO = [
+  ['Flexão de braço', 4, '15-20', 60],
+  ['Barra fixa pegada supinada', 4, '6-10', 90],
+  ['Agachamento búlgaro', 3, '12', 75],
+  ['Dips na cadeira', 4, '12-15', 60],
 ];
 
 export function gerarTreinos(perfil) {
@@ -129,20 +137,32 @@ export function gerarTreinos(perfil) {
       { nome: 'Acessórios e Core',            exercicios: [...BICEPS_BASICO, ...TRICEPS_BASICO, ...CORE_BASICO.slice(0,1)] },
     ];
   } else if (objetivo === 'emagrecimento') {
+    const cardio = avancado ? CARDIO_AVANCADO : CARDIO_BASICO;
     blocos = [
-      { nome: 'Circuito Superior',    exercicios: [...PEITO_BASICO.slice(0,2), ...COSTAS_BASICO.slice(0,2)] },
-      { nome: 'Circuito Inferior',    exercicios: avancado ? CIRCUITO_AVANCADO : CIRCUITO_BASICO },
-      { nome: 'Full Body',            exercicios: [PERNAS_BASICO[0], PEITO_BASICO[0], COSTAS_BASICO[0], ...CORE_BASICO.slice(0,2)] },
-      { nome: 'Inferior Intenso',     exercicios: [...GLUTEOS_BASICO.slice(0,2), ...(avancado ? CIRCUITO_AVANCADO : CIRCUITO_BASICO).slice(0,2)] },
+      { nome: 'Superior + Cardio',    exercicios: [...PEITO_BASICO.slice(0,2), ...COSTAS_BASICO.slice(0,2), ...cardio.slice(0,1)] },
+      { nome: 'Inferior + Cardio',    exercicios: [...PERNAS_BASICO.slice(0,3), ...cardio.slice(0,1)] },
+      { nome: 'Full Body + Cardio',   exercicios: [PERNAS_BASICO[0], PEITO_BASICO[0], COSTAS_BASICO[0], ...CORE_BASICO.slice(0,2)] },
+      { nome: 'Inferior Intenso',     exercicios: [...GLUTEOS_BASICO.slice(0,2), ...cardio.slice(0,1)] },
       { nome: 'Superior + Core',      exercicios: [...OMBRO_BASICO.slice(0,2), ...BICEPS_BASICO, ...CORE_BASICO] },
-      { nome: 'Circuito Completo',    exercicios: avancado ? CIRCUITO_AVANCADO : CIRCUITO_BASICO },
+      { nome: 'Cardio',               exercicios: cardio },
       { nome: 'Full Body Leve',       exercicios: [PEITO_BASICO[0], COSTAS_BASICO[0], PERNAS_BASICO[0]] },
     ];
+  } else if (objetivo === 'calistenia') {
+    blocos = [
+      { nome: 'Peito e Braços',    exercicios: [['Flexão de braço', avancado?4:3, avancado?'15-20':'10-15', 60], ['Dips na cadeira', 3, '10-12', 60], ['Extensão de tríceps', 3, '12-15', 45]] },
+      { nome: 'Pernas e Glúteos',  exercicios: [...GLUTEOS_BASICO.slice(0,2), ['Agachamento', avancado?4:3, avancado?'20':'15-20', 45], ['Agachamento búlgaro', 3, '12', 75]] },
+      { nome: 'Costas',            exercicios: [['Barra fixa pegada supinada', avancado?4:3, avancado?'8-10':'6-10', 90], ['Barra fixa pegada fechada', 3, '8-10', 90]] },
+      { nome: 'Full Body',         exercicios: avancado ? CALISTENIA_AVANCADO : CALISTENIA_BASICO },
+      { nome: 'Core e Mobilidade', exercicios: CORE_BASICO },
+      { nome: 'Pernas 2',          exercicios: [['Agachamento com joelho elevado', 3, '12', 60], ['Afundo', 3, '12', 60]] },
+      { nome: 'Recuperação Ativa', exercicios: [...CORE_BASICO.slice(0,2)] },
+    ];
   } else {
+    const cardio = avancado ? CARDIO_AVANCADO : CARDIO_BASICO;
     blocos = [
       { nome: 'Força Superior',    exercicios: [...PEITO_BASICO, ...COSTAS_BASICO.slice(0,2), ...OMBRO_BASICO.slice(0,2)] },
       { nome: 'Força Inferior',    exercicios: [...PERNAS_BASICO, ...(feminino ? GLUTEOS_BASICO.slice(0,2) : [])] },
-      { nome: 'Circuito e Core',   exercicios: [...(avancado ? CIRCUITO_AVANCADO : CIRCUITO_BASICO), ...CORE_BASICO] },
+      { nome: 'Cardio e Core',     exercicios: [...cardio, ...CORE_BASICO] },
       { nome: 'Superior + Braços', exercicios: [...PEITO_BASICO.slice(0,2), ...COSTAS_BASICO.slice(0,2), ...BICEPS_BASICO, ...TRICEPS_BASICO] },
       { nome: 'Inferior + Core',   exercicios: [...PERNAS_BASICO.slice(0,4), ...GLUTEOS_BASICO.slice(0,2)] },
       { nome: 'Full Body',         exercicios: [PEITO_BASICO[0], COSTAS_BASICO[0], PERNAS_BASICO[0]] },

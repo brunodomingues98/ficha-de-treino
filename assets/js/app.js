@@ -1226,44 +1226,17 @@ async function gerarDietaIA(extras = {}) {
   const orcamentoMap = { baixo: 'econômico (até R$30/dia, priorizando arroz, feijão, ovos, frango)', medio: 'moderado (R$30-60/dia)', alto: 'sem restrição de orçamento' };
   const cozinhaMap = { sim: 'cozinha em casa', parcial: 'às vezes cozinha / usa marmita', nao: 'come fora ou pede comida' };
 
-  const prompt = `Crie um plano alimentar diário detalhado em JSON para uma pessoa com as seguintes características:
-- Gênero: ${perfil.genero || 'não informado'}
-- Idade: ${perfil.idade || 25} anos
-- Peso: ${perfil.peso || 70} kg
-- Altura: ${perfil.altura || 170} cm
-- Objetivo: ${objetivo}
-- Nível: ${perfil.nivel || 'intermediário'}
-- Restrições alimentares: ${extras.restricoes || 'nenhuma'}
-- Alimentos que não gosta: ${extras.naoGosta || 'nenhum'}
-- Número de refeições: ${extras.refeicoes || 5}
-- Orçamento: ${orcamentoMap[extras.orcamento] || 'moderado'}
-- Hábito de preparo: ${cozinhaMap[extras.cozinha] || 'cozinha em casa'}
-
-Retorne APENAS um JSON válido, sem markdown, sem texto antes ou depois:
-{
-  "refeicoes": [
-    { "horario": "07:00", "ref": "Café da Manhã", "opcoes": ["opção completa 1 com quantidades", "opção completa 2 com quantidades", "opção completa 3 com quantidades"] }
-  ],
-  "suplementos": [
-    { "nome": "Nome", "quantidade": "dose", "horario": "quando tomar", "dias": "frequência", "obs": "como usar" }
-  ]
-}
-Inclua ${extras.refeicoes || 5} refeições com 3 opções cada. Coloque quantidades (ex: "2 ovos mexidos + 2 fatias pão integral + 1 copo leite 200ml"). Suplementos baseados no objetivo. Tudo prático e acessível no Brasil.`;
-
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('/api/gerar-dieta', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1500,
-        messages: [{ role: 'user', content: prompt }]
-      })
+      body: JSON.stringify({ perfil, extras })
     });
+
     const data = await response.json();
-    const texto = data.content?.map(i => i.text || '').join('');
-    const jsonLimpo = texto.replace(/```json|```/g, '').trim();
-    const nutricao = JSON.parse(jsonLimpo);
+    if (!response.ok) throw new Error(data.error || 'Erro ao gerar dieta');
+
+    const nutricao = data.nutricao;
     await updateDoc(doc(db, 'users', currentUser.uid), { nutricao });
     userData.nutricao = nutricao;
     showToast('✅ Plano alimentar gerado!');
