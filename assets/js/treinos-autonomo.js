@@ -178,7 +178,8 @@ export function gerarTreinos(perfil) {
       nome: bloco.nome,
       exercicios: filtrar(bloco.exercicios),
       dataInicio: null,
-      dataFim: null
+      dataFim: null,
+      ordem: idx
     };
   });
 

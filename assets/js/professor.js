@@ -143,7 +143,7 @@ function bindAlunoCards() {
 function renderAlunoDetail() {
   const a = alunoAtual;
   const treinos = a.treinos || {};
-  const ids = Object.keys(treinos);
+  const ids = Object.keys(treinos).sort((x, y) => (treinos[x].ordem ?? 999) - (treinos[y].ordem ?? 999));
 
   const treinoCards = ids.map(id => {
     const t = treinos[id];
@@ -646,10 +646,15 @@ async function salvarTreino() {
     return;
   }
 
+  const treinosDoAluno = alunoAtual.treinos || {};
+  const existente = treinosDoAluno[letraAtual];
+  const proximaOrdem = Object.values(treinosDoAluno).reduce((max, t) => Math.max(max, t.ordem ?? 0), -1) + 1;
+
   const treinoData = {
     nome,
     dataInicio: dataInicio || null,
     dataFim: dataFim || null,
+    ordem: existente?.ordem ?? proximaOrdem,
     exercicios: exerciciosSelecionados.map(s => {
       const ex = getExercicioPorId(s.exId);
       return {

@@ -378,12 +378,22 @@ function verificarAlertaAtualizacaoTreino() {
 }
 
 
+// Ordem estável dos treinos — usa o campo "ordem" salvo em cada treino,
+// com fallback para a posição no objeto (compatibilidade com dados antigos)
+function getIdsOrdenados() {
+  return Object.keys(TREINOS).sort((a, b) => {
+    const oa = TREINOS[a].ordem ?? 999;
+    const ob = TREINOS[b].ordem ?? 999;
+    return oa - ob;
+  });
+}
+
 function renderHome() {
   const nome = userData?.name?.split(' ')[0]
              || currentUser?.email?.split('@')[0]
              || 'Atleta';
 
-  const ids = Object.keys(TREINOS);
+  const ids = getIdsOrdenados();
   const hoje = new Date().toISOString().split('T')[0];
   const dica = getDicaDoDia();
 
@@ -468,7 +478,7 @@ function renderHome() {
 
 // ── LISTA DE TREINOS (aba "Treinos") ─────────────────────────
 function renderListaTreinos() {
-  const ids = Object.keys(TREINOS);
+  const ids = getIdsOrdenados();
   const hoje = new Date().toISOString().split('T')[0];
 
   return `
@@ -967,11 +977,17 @@ function bindTreino(id) {
   document.querySelectorAll('.serie-check').forEach(btn => {
     btn.addEventListener('click', () => {
       const exId = btn.dataset.ex;
-      const idx  = parseInt(btn.dataset.idx);
       btn.classList.toggle('done');
 
       const allChecks = document.querySelectorAll(`.serie-check[data-ex="${exId}"]`);
       const done = [...allChecks].filter(c => c.classList.contains('done')).length;
+      const exercicioItem = document.getElementById(`ex-${exId}`);
+
+      if (done === allChecks.length) {
+        exercicioItem?.classList.add('exercicio-concluido');
+      } else {
+        exercicioItem?.classList.remove('exercicio-concluido');
+      }
 
       if (btn.classList.contains('done')) {
         if (done < allChecks.length) {
@@ -979,7 +995,7 @@ function bindTreino(id) {
           const descanso = parseInt(timerBtn?.dataset.descanso) || 60;
           abrirModalDescanso(descanso);
         } else {
-          const nomeEx = TREINOS[letra]?.exercicios.find(e => e.id === exId)?.nome;
+          const nomeEx = TREINOS[id]?.exercicios.find(e => e.id === exId)?.nome;
           showToast(`✅ ${nomeEx} concluído!`);
           navigator.vibrate?.(200);
         }
@@ -1354,10 +1370,15 @@ function bindPerfil() {
 
 // ── EDITOR DE TREINOS DO AUTÔNOMO ──────────────────────────
 function abrirEditorTreinos() {
-  const ids = Object.keys(TREINOS);
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.id = 'modal-editor-treinos';
+  document.body.appendChild(overlay);
+  renderizarEditorTreinos(overlay);
+}
+
+function renderizarEditorTreinos(overlay) {
+  const ids = getIdsOrdenados();
   overlay.innerHTML = `
     <div class="modal-sheet">
       <div class="modal-handle"></div>
@@ -1367,11 +1388,17 @@ function abrirEditorTreinos() {
       </div>
 
       <div id="lista-treinos-editor" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
-        ${ids.length ? ids.map(id => {
+        ${ids.length ? ids.map((id, idx) => {
           const t = TREINOS[id];
           const count = t.exercicios?.length || 0;
           return `
             <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;display:flex;align-items:center;gap:10px">
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <button class="btn-mover-treino" data-id="${id}" data-dir="up" ${idx === 0 ? 'disabled' : ''}
+                  style="background:var(--surface);border:1px solid var(--border);border-radius:6px;width:26px;height:22px;color:${idx === 0 ? 'var(--text-muted)' : 'var(--gold)'};font-size:11px;${idx === 0 ? 'opacity:.3' : ''}">▲</button>
+                <button class="btn-mover-treino" data-id="${id}" data-dir="down" ${idx === ids.length - 1 ? 'disabled' : ''}
+                  style="background:var(--surface);border:1px solid var(--border);border-radius:6px;width:26px;height:22px;color:${idx === ids.length - 1 ? 'var(--text-muted)' : 'var(--gold)'};font-size:11px;${idx === ids.length - 1 ? 'opacity:.3' : ''}">▼</button>
+              </div>
               <div style="flex:1">
                 <div style="font-size:14px;font-weight:600;color:var(--text-primary)">${t.nome}</div>
                 <div style="font-size:12px;color:var(--text-muted)">${count} exercício${count !== 1 ? 's' : ''}</div>
@@ -1389,15 +1416,32 @@ function abrirEditorTreinos() {
       </div>
 
       <button class="btn-primary" id="btn-novo-treino-autonomo">+ Adicionar novo treino</button>
+      <button class="btn-secondary" id="btn-gerar-novamente" style="margin-top:8px">🔄 Gerar novos treinos</button>
     </div>
   `;
-  document.body.appendChild(overlay);
 
-  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
-  document.getElementById('btn-fechar-editor').addEventListener('click', () => overlay.remove());
-  document.getElementById('btn-novo-treino-autonomo').addEventListener('click', () => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); }, { once: true });
+  overlay.querySelector('#btn-fechar-editor').addEventListener('click', () => overlay.remove());
+  overlay.querySelector('#btn-novo-treino-autonomo').addEventListener('click', () => {
     overlay.remove();
     abrirEditorBuilder(null);
+  });
+
+  overlay.querySelector('#btn-gerar-novamente').addEventListener('click', async () => {
+    if (!confirm('Isso vai substituir TODOS os seus treinos atuais por um conjunto novo, gerado com base no seu perfil. Os treinos atuais serão perdidos. Continuar?')) return;
+    try {
+      const { gerarTreinos } = await import('./treinos-autonomo.js');
+      const novosTreinos = gerarTreinos(userData.perfil || {});
+      await updateDoc(doc(db, 'users', currentUser.uid), { treinos: novosTreinos });
+      Object.keys(TREINOS).forEach(k => delete TREINOS[k]);
+      Object.assign(TREINOS, novosTreinos);
+      userData.treinos = { ...TREINOS };
+      showToast('✅ Novos treinos gerados!');
+      overlay.remove();
+      renderPage('home');
+    } catch (e) {
+      showToast('❌ Erro ao gerar: ' + e.message);
+    }
   });
 
   overlay.querySelectorAll('.btn-edit-autonomo').forEach(btn => {
@@ -1421,6 +1465,30 @@ function abrirEditorTreinos() {
         renderPage('perfil');
       } catch (e) {
         showToast('❌ Erro: ' + e.message);
+      }
+    });
+  });
+
+  overlay.querySelectorAll('.btn-mover-treino').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const ids = getIdsOrdenados();
+      const idx = ids.indexOf(btn.dataset.id);
+      const alvo = btn.dataset.dir === 'up' ? idx - 1 : idx + 1;
+      if (alvo < 0 || alvo >= ids.length) return;
+
+      // troca o campo "ordem" entre o treino atual e o vizinho
+      const idA = ids[idx], idB = ids[alvo];
+      const ordemA = TREINOS[idA].ordem ?? idx;
+      const ordemB = TREINOS[idB].ordem ?? alvo;
+      TREINOS[idA].ordem = ordemB;
+      TREINOS[idB].ordem = ordemA;
+
+      try {
+        await updateDoc(doc(db, 'users', currentUser.uid), { treinos: TREINOS });
+        userData.treinos = { ...TREINOS };
+        renderizarEditorTreinos(overlay);
+      } catch (e) {
+        showToast('❌ Erro ao reordenar: ' + e.message);
       }
     });
   });
@@ -1590,6 +1658,10 @@ async function salvarTreinoAutonomo() {
   const nome = document.getElementById('nome-treino-autonomo').value.trim() || 'Meu Treino';
   if (!autonomoExercicios.length) { showToast('⚠️ Adicione ao menos um exercício'); return; }
 
+  // Mantém a ordem se o treino já existia; se for novo, vai para o final da lista
+  const existente = TREINOS[autonomoTreinoId];
+  const proximaOrdem = Object.values(TREINOS).reduce((max, t) => Math.max(max, t.ordem ?? 0), -1) + 1;
+
   const treinoData = {
     nome,
     exercicios: autonomoExercicios.map(s => {
@@ -1599,7 +1671,8 @@ async function salvarTreinoAutonomo() {
                descansoSegundos: s.descansoSegundos,
                series: `${s.numSeries}x${s.repeticoes}` };
     }),
-    dataInicio: null, dataFim: null
+    dataInicio: null, dataFim: null,
+    ordem: existente?.ordem ?? proximaOrdem
   };
 
   try {
