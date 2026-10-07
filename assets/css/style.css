@@ -710,6 +710,22 @@ ul { list-style: none; }
 }
 .exercicio-item.expanded .exercicio-chevron { transform: rotate(90deg); }
 
+/* Exercício com todas as séries marcadas como concluídas */
+.exercicio-item.exercicio-concluido {
+  border-color: #34d399;
+  background: rgba(52,211,153,.06);
+}
+.exercicio-item.exercicio-concluido .exercicio-thumb { opacity: .75; }
+.exercicio-item.exercicio-concluido .exercicio-nome {
+  color: #34d399;
+}
+.exercicio-item.exercicio-concluido .exercicio-nome::after {
+  content: " ✓ Concluído";
+  font-size: 11px;
+  font-weight: 700;
+  color: #34d399;
+}
+
 /* painel expandido */
 .exercicio-detail {
   display: none;
@@ -1499,6 +1515,25 @@ ul { list-style: none; }
   font-size: 22px;
   letter-spacing: .04em;
   margin-bottom: 16px;
+}
+
+/* Modal de descanso entre séries: centralizado na tela (não é um
+   bottom sheet como os demais modais, já que é só um cronômetro
+   de consulta rápida) */
+#modal-descanso {
+  align-items: center;
+  padding: 20px;
+}
+#modal-descanso .modal-sheet {
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-gold);
+  border-top: 1px solid var(--border-gold);
+  max-width: 360px;
+  animation: descansoPop .25s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes descansoPop {
+  from { transform: scale(.9); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
 }
 
 /* ── PWA INSTALL BANNER ─────────────────────────────────── */
