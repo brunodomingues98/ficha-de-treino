@@ -378,13 +378,27 @@ function verificarAlertaAtualizacaoTreino() {
 }
 
 
-// Ordem estável dos treinos — usa o campo "ordem" salvo em cada treino,
-// com fallback para a posição no objeto (compatibilidade com dados antigos)
+// Ordem estável dos treinos. O Firestore não garante a ordem das chaves de
+// um mapa, então não dá para depender da ordem de iteração do objeto.
+// Prioridade: campo "ordem" salvo → timestamp/índice embutidos no ID
+// (treino_<timestamp>_<idx>) → ID em ordem alfabética.
 function getIdsOrdenados() {
+  const partes = id => {
+    const p = id.split('_');
+    return [parseInt(p[1]) || 0, parseInt(p[2]) || 0];
+  };
   return Object.keys(TREINOS).sort((a, b) => {
-    const oa = TREINOS[a].ordem ?? 999;
-    const ob = TREINOS[b].ordem ?? 999;
-    return oa - ob;
+    const oa = TREINOS[a].ordem;
+    const ob = TREINOS[b].ordem;
+    if (oa != null && ob != null && oa !== ob) return oa - ob;
+    if (oa != null && ob == null) return -1;
+    if (oa == null && ob != null) return 1;
+
+    const [ta, ia] = partes(a);
+    const [tb, ib] = partes(b);
+    if (ta !== tb) return ta - tb;
+    if (ia !== ib) return ia - ib;
+    return a.localeCompare(b);
   });
 }
 
