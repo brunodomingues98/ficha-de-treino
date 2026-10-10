@@ -1,4 +1,9 @@
-// Gerador de planos de corrida por regras fixas 
+// Gerador de planos de corrida por regras fixas (sem IA).
+// Funções puras: não usam DOM nem Firebase.
+//
+// Estrutura do plano: blocos de 7 dias a partir do dia em que o plano é criado.
+// Cada dia da semana escolhido pelo usuário recebe uma sessão em todos os blocos.
+
 // ── Opções do questionário ─────────────────────────────────
 
 export const NIVEIS = [
