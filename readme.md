@@ -61,6 +61,14 @@ app nativo, sem loja de aplicativos.
 - Dicas diárias personalizadas com cálculos reais (meta de água, proteína,
   necessidade calórica, IMC, zona de frequência cardíaca) baseados no perfil
 - Notificação automática a cada ~45 dias sugerindo renovar o treino
+- **Plano de corrida** (aba própria, convive com os treinos de musculação):
+  questionário em 4 passos (nível atual, objetivo — condicionamento, prova,
+  baixar pace ou aumentar distância —, dias da semana e dor/lesão) e geração
+  por regras fixas, sem IA. A planilha mostra cada semana com o treino de cada
+  dia (caminhada + corrida para iniciantes, corrida leve, longão, intervalado,
+  ritmo, fartlek e dia da prova), com check de feito, ajuste de km/tempo reais,
+  % do plano, km e tempo acumulados. O registro fica salvo por no máximo
+  30 dias; os totais acumulados não expiram
 
 ### Geral
 - **PWA instalável** — banner automático no Android, instruções no iOS
@@ -98,6 +106,8 @@ fichaDeTreino/
 │   │   ├── firebase.js       # Configuração e helpers do Firebase
 │   │   ├── exercicios-db.js  # Biblioteca de exercícios (Cloudinary)
 │   │   ├── treinos-autonomo.js # Gerador de treinos automáticos por perfil
+│   │   ├── corrida.js        # Gerador do plano de corrida (regras fixas)
+│   │   ├── corrida-ui.js     # Aba Corrida: questionário, planilha e progresso
 │   │   ├── app.js            # Lógica do app do aluno/autônomo (SPA)
 │   │   ├── professor.js      # Lógica do painel do professor
 │   │   ├── admin.js          # Lógica do painel do admin

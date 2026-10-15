@@ -11,6 +11,11 @@ import {
 } from './firebase.js';
 
 import {
+  configurarCorrida, renderCorrida, bindCorrida,
+  cartaoCorridaHome, bindCartaoCorridaHome
+} from './corrida-ui.js';
+
+import {
   BIBLIOTECA_EXERCICIOS, GRUPOS_MUSCULARES,
   getExerciciosPorGrupo, getExercicioPorId
 } from './exercicios-db.js';
@@ -167,10 +172,26 @@ function showLogin() {
   loginScreen.classList.remove('hidden');
   appShell.classList.add('hidden');
 }
+// Contexto usado pela aba Corrida (usuário atual, gravação e navegação)
+configurarCorrida(() => ({
+  userData,
+  salvar: patch => updateDoc(doc(db, 'users', currentUser.uid), patch),
+  showToast,
+  irParaCorrida: () => { setActiveNav('corrida'); renderPage('corrida'); },
+  rerender: () => renderPage('corrida')
+}));
+
+// A aba Corrida aparece só para usuários autônomos
+function atualizarNavCorrida() {
+  const btn = document.querySelector('.bottom-nav-item[data-page="corrida"]');
+  if (btn) btn.classList.toggle('hidden', userData?.role !== 'autonomo');
+}
+
 function showApp() {
   loginScreen.classList.add('hidden');
   appShell.classList.remove('hidden');
   updateHeaderAvatar();
+  atualizarNavCorrida();
 }
 
 // ── AVATAR NO HEADER ────────────────────────────────────────
@@ -225,6 +246,10 @@ function renderPage(page, params = {}) {
     case 'home':
       treinoSessaoAtiva = false;
       wrap.innerHTML = renderHome();
+      break;
+    case 'corrida':
+      treinoSessaoAtiva = false;
+      wrap.innerHTML = renderCorrida();
       break;
     case 'treinos':
       treinoSessaoAtiva = false;
@@ -476,6 +501,8 @@ function renderHome() {
 
     <p class="section-title">SEUS TREINOS</p>
     <div class="treino-cards">${cards}</div>
+
+    ${cartaoCorridaHome()}
 
     <p class="section-title">💡 DICA DO DIA</p>
     <div style="padding:0 16px 24px">
@@ -909,6 +936,7 @@ function bindEvents(page, params) {
   switch (page) {
     case 'home':    bindHome();            break;
     case 'treinos': bindListaTreinos();    break;
+    case 'corrida': bindCorrida();         break;
     case 'treino':  bindTreino(params.id); break;
     case 'nutricao':bindNutricao();        break;
     case 'perfil':  bindPerfil();          break;
@@ -916,6 +944,7 @@ function bindEvents(page, params) {
 }
 
 function bindHome() {
+  bindCartaoCorridaHome();
   // Botão dispensar alerta
   document.getElementById('btn-alerta-editar')?.addEventListener('click', () => {
     renderPage('perfil');
