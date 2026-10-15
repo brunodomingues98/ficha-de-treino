@@ -1599,3 +1599,181 @@ ul { list-style: none; }
   font-size: 12px;
   display: flex; align-items: center; justify-content: center;
 }
+
+/* ── CORRIDA ───────────────────────────────────────────── */
+.field-group select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 13px 14px;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-family: inherit;
+}
+.field-group input[type="date"] { color-scheme: dark; }
+
+.cor-topo { display: flex; align-items: center; justify-content: space-between; padding: 20px 16px 8px; }
+.cor-topo h1 { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: .04em; margin: 0; }
+.cor-topo h1 span { color: var(--gold); }
+.cor-btn-mini {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-family: inherit;
+}
+
+.cor-vazio { text-align: center; padding: 40px 24px; }
+.cor-vazio .icon { font-size: 56px; margin-bottom: 12px; }
+.cor-vazio h2 { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: .04em; margin-bottom: 8px; }
+.cor-vazio p { color: var(--text-muted); font-size: 14px; line-height: 1.5; margin-bottom: 20px; }
+
+.cor-resumo {
+  margin: 0 16px 12px;
+  background: var(--grad-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+}
+.cor-resumo-linha { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+.cor-barra { height: 8px; background: var(--surface); border-radius: 4px; overflow: hidden; margin-bottom: 12px; }
+.cor-barra > div { height: 100%; background: var(--grad-brand); border-radius: 4px; }
+.cor-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.cor-tile { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 10px 6px; text-align: center; }
+.cor-tile b { display: block; font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: var(--gold); letter-spacing: .04em; line-height: 1.1; }
+.cor-tile span { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); }
+
+.cor-prova {
+  margin: 0 16px 10px;
+  background: var(--grad-subtle);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gold-light);
+}
+.cor-aviso {
+  margin: 0 16px 10px;
+  background: rgba(245,158,11,.1);
+  border: 1px solid rgba(245,158,11,.35);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #fbbf24;
+}
+.cor-legal { font-size: 11px; color: var(--text-muted); line-height: 1.5; padding: 0 16px 24px; }
+
+/* Planilha */
+.pl-semana { margin: 0 16px 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+.pl-semana.atual { border-color: var(--border-gold); }
+.pl-semana-cab { display: flex; align-items: center; gap: 8px; padding: 12px; cursor: pointer; }
+.pl-semana-cab .tit { flex: 1; font-size: 13px; font-weight: 700; }
+.pl-semana-cab .tit small { display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-top: 2px; }
+.pl-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: var(--grad-subtle); border: 1px solid var(--border-gold); color: var(--gold-light); }
+.pl-cont { font-size: 12px; font-weight: 700; color: var(--gold); }
+.pl-corpo { display: none; border-top: 1px solid var(--border); }
+.pl-semana.aberta .pl-corpo { display: block; }
+
+.pl-linha { display: grid; grid-template-columns: 48px 1fr 34px; gap: 10px; align-items: start; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.pl-linha:last-child { border-bottom: none; }
+.pl-linha.descanso { opacity: .45; }
+.pl-linha.hoje { background: rgba(247,207,73,.06); }
+.pl-linha[data-sid] { cursor: pointer; }
+.pl-dia b { display: block; font-size: 13px; color: var(--gold); }
+.pl-dia span { font-size: 11px; color: var(--text-muted); }
+.pl-titulo { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.pl-resumo { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.pl-detalhe { display: none; font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-top: 6px; }
+.pl-linha.aberta .pl-detalhe { display: block; }
+.pl-linha.feito .pl-titulo { color: #34d399; }
+.pl-linha.perdido .pl-titulo { color: var(--text-muted); }
+.pl-real { font-size: 11px; color: #34d399; margin-top: 6px; }
+.pl-ajustar { background: none; color: var(--gold); font-size: 11px; text-decoration: underline; margin-left: 6px; font-family: inherit; }
+.pl-check {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface2);
+  color: transparent;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.pl-check.done { background: var(--grad-brand); border-color: var(--gold); color: #fff; }
+
+/* Card na Home */
+.cor-card-home {
+  margin: 0 16px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--grad-card);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  cursor: pointer;
+}
+.cor-card-icon { font-size: 28px; }
+.cor-card-info { flex: 1; min-width: 0; }
+.cor-card-titulo { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.cor-card-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+/* Questionário */
+.cor-wiz-topo { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.cor-x { color: var(--text-muted); font-size: 24px; line-height: 1; }
+.cor-passos { display: flex; gap: 6px; justify-content: center; margin-bottom: 14px; }
+.cor-passo { width: 8px; height: 8px; border-radius: 50%; background: var(--border); }
+.cor-passo.ativo { background: var(--gold); transform: scale(1.3); }
+.cor-passo.ok { background: var(--purple-light); }
+.cor-titulo { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: .04em; text-align: center; margin-bottom: 4px; }
+.cor-sub { font-size: 13px; color: var(--text-muted); text-align: center; margin-bottom: 14px; }
+.cor-opcoes { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.cor-opcao {
+  display: flex; align-items: center; gap: 12px;
+  text-align: left;
+  background: var(--surface2);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  font-family: inherit;
+  color: var(--text-secondary);
+}
+.cor-opcao .ic { font-size: 24px; }
+.cor-opcao b { display: block; font-size: 14px; color: var(--text-primary); }
+.cor-opcao small { font-size: 12px; color: var(--text-muted); }
+.cor-opcao.sel { border-color: var(--gold); background: rgba(247,207,73,.08); }
+.cor-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 12px; }
+.cor-chip {
+  min-width: 52px;
+  padding: 10px 8px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--surface2);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  font-family: inherit;
+}
+.cor-chip.sel { border-color: var(--gold); background: rgba(247,207,73,.1); color: var(--gold-light); }
+.cor-dica { font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 12px; text-align: center; }
+.cor-dica .ok { color: #34d399; }
+.cor-dica .erro { color: #f87171; }
+.cor-form { display: flex; flex-direction: column; gap: 12px; margin-bottom: 14px; }
+.cor-resumo-lista {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  font-size: 13px;
+  line-height: 1.7;
+  margin-bottom: 12px;
+  color: var(--text-secondary);
+}
+.cor-wiz-botoes { display: flex; gap: 8px; margin-top: 8px; }
+.cor-wiz-botoes .btn-primary { flex: 1; }
+.cor-wiz-botoes .btn-secondary { width: auto; padding: 0 18px; }
