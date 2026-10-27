@@ -52,6 +52,11 @@ app nativo, sem loja de aplicativos.
   (hipertrofia, emagrecimento ou condicionamento), nível de experiência e
   **frequência semanal de treino** (2 a 7 dias)
 - Geração automática de treinos com base nessas respostas
+- Gerar novos treinos a qualquer momento (aba Treinos ou editor de treinos): é possível
+  trocar o objetivo, o nível e os dias da semana, e combinar até 2 objetivos
+  (ex.: condicionamento + calistenia). Os dias são divididos entre os objetivos e os
+  treinos se alternam na semana. Os treinos de calistenia usam só as imagens da
+  pasta `calistenia`
 - Editor completo do próprio treino: adicionar, remover e trocar
   exercícios, ajustar séries/repetições/descanso — acessível direto pela
   tela do treino ("Editar este treino") ou pelo perfil
