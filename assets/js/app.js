@@ -14,6 +14,7 @@ import {
   configurarCorrida, renderCorrida, bindCorrida,
   cartaoCorridaHome, bindCartaoCorridaHome
 } from './corrida-ui.js';
+import { gerarTreinos, OBJETIVOS_TREINO, MAX_OBJETIVOS, objetivosDoPerfil } from './treinos-autonomo.js';
 
 import {
   BIBLIOTECA_EXERCICIOS, GRUPOS_MUSCULARES,
@@ -527,6 +528,12 @@ function renderListaTreinos() {
       <h1 style="font-size:26px">💪 <span>Meus Treinos</span></h1>
     </div>
 
+    ${userData?.role === 'autonomo' ? `
+    <div style="padding:0 16px 12px;display:flex;gap:8px">
+      <button class="btn-secondary" id="btn-lista-gerar" style="font-size:13px;padding:10px">🔄 Gerar novos treinos</button>
+      <button class="btn-secondary" id="btn-lista-gerenciar" style="font-size:13px;padding:10px">↕️ Gerenciar e reordenar</button>
+    </div>` : ''}
+
     <div style="padding:0 16px;display:flex;flex-direction:column;gap:10px;padding-bottom:24px">
       ${ids.length ? ids.map((id, idx) => {
         const t = TREINOS[id];
@@ -560,6 +567,8 @@ function renderListaTreinos() {
 }
 
 function bindListaTreinos() {
+  document.getElementById('btn-lista-gerar')?.addEventListener('click', abrirModalGerarTreinos);
+  document.getElementById('btn-lista-gerenciar')?.addEventListener('click', abrirEditorTreinos);
   document.querySelectorAll('[data-treino-id]').forEach(card => {
     card.addEventListener('click', () => {
       renderPage('treino', { id: card.dataset.treinoId });
@@ -1412,6 +1421,138 @@ function bindPerfil() {
 }
 
 // ── EDITOR DE TREINOS DO AUTÔNOMO ──────────────────────────
+// ── GERAR NOVOS TREINOS (objetivos combinados) ─────────────
+const NIVEIS_TREINO = [
+  { id: 'iniciante', titulo: 'Iniciante' },
+  { id: 'intermediario', titulo: 'Intermediário' },
+  { id: 'avancado', titulo: 'Avançado' },
+];
+const INFO_OBJETIVO = {
+  hipertrofia:     { icone: '💪', desc: 'Musculação com foco em ganho de massa' },
+  emagrecimento:   { icone: '🔥', desc: 'Musculação e cardio para queima calórica' },
+  condicionamento: { icone: '⚡', desc: 'Força, resistência e cardio equilibrados' },
+  calistenia:      { icone: '🤸', desc: 'Treino com o peso do próprio corpo' },
+};
+
+function abrirModalGerarTreinos() {
+  const perfil = userData?.perfil || {};
+  const sel = {
+    objetivos: objetivosDoPerfil(perfil),
+    nivel: NIVEIS_TREINO.some(n => n.id === perfil.nivel) ? perfil.nivel : 'intermediario',
+    dias: Math.min(7, Math.max(2, Number(perfil.diasSemana) || 3)),
+  };
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'modal-gerar-treinos';
+  document.body.appendChild(overlay);
+
+  const mostrarErro = msg => {
+    const el = overlay.querySelector('#gt-erro');
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.toggle('show', !!msg);
+  };
+
+  const desenhar = () => {
+    const [a, b] = sel.objetivos;
+    const divisao = b
+      ? `${Math.ceil(sel.dias / 2)} treino(s) de ${OBJETIVOS_TREINO[a]} e ${Math.floor(sel.dias / 2)} de ${OBJETIVOS_TREINO[b]}. O objetivo escolhido primeiro fica com o dia extra.`
+      : '';
+    overlay.innerHTML = `
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="cor-wiz-topo">
+          <div class="modal-title" style="margin:0">🔄 Gerar novos treinos</div>
+          <button class="cor-x" data-act="fechar" aria-label="Fechar">×</button>
+        </div>
+        <div class="login-error" id="gt-erro"></div>
+
+        <div class="cor-sub" style="text-align:left">Objetivo (escolha até ${MAX_OBJETIVOS})</div>
+        <div class="cor-opcoes">
+          ${Object.keys(OBJETIVOS_TREINO).map(id => `
+            <button class="cor-opcao ${sel.objetivos.includes(id) ? 'sel' : ''}" data-act="obj" data-valor="${id}">
+              <span class="ic">${INFO_OBJETIVO[id].icone}</span>
+              <span><b>${OBJETIVOS_TREINO[id]}</b><small>${INFO_OBJETIVO[id].desc}</small></span>
+            </button>`).join('')}
+        </div>
+        ${divisao ? `<div class="cor-dica">${divisao}</div>` : ''}
+
+        <div class="cor-sub" style="text-align:left">Nível</div>
+        <div class="cor-chips">
+          ${NIVEIS_TREINO.map(n => `<button class="cor-chip ${sel.nivel === n.id ? 'sel' : ''}" data-act="nivel" data-valor="${n.id}">${n.titulo}</button>`).join('')}
+        </div>
+
+        <div class="cor-sub" style="text-align:left">Dias de treino por semana</div>
+        <div class="cor-chips">
+          ${[2, 3, 4, 5, 6, 7].map(n => `<button class="cor-chip ${sel.dias === n ? 'sel' : ''}" data-act="dias" data-valor="${n}">${n}</button>`).join('')}
+        </div>
+
+        <div class="cor-aviso" style="margin:0 0 12px">Os treinos atuais serão substituídos pelos novos.</div>
+        <div class="cor-wiz-botoes">
+          <button class="btn-secondary" data-act="fechar">Cancelar</button>
+          <button class="btn-primary" data-act="gerar">Gerar treinos</button>
+        </div>
+      </div>`;
+  };
+
+  overlay.addEventListener('click', async e => {
+    if (e.target === overlay) { overlay.remove(); return; }
+    const btn = e.target.closest('[data-act]');
+    if (!btn) return;
+    const act = btn.dataset.act;
+
+    if (act === 'fechar') { overlay.remove(); return; }
+
+    if (act === 'obj') {
+      const id = btn.dataset.valor;
+      if (sel.objetivos.includes(id)) {
+        if (sel.objetivos.length === 1) { mostrarErro('Mantenha pelo menos um objetivo.'); return; }
+        sel.objetivos = sel.objetivos.filter(o => o !== id);
+      } else if (sel.objetivos.length >= MAX_OBJETIVOS) {
+        mostrarErro(`Você pode combinar no máximo ${MAX_OBJETIVOS} objetivos. Desmarque um para trocar.`);
+        return;
+      } else {
+        sel.objetivos.push(id);
+      }
+      desenhar();
+      return;
+    }
+    if (act === 'nivel') { sel.nivel = btn.dataset.valor; desenhar(); return; }
+    if (act === 'dias')  { sel.dias = Number(btn.dataset.valor); desenhar(); return; }
+
+    if (act === 'gerar') {
+      const novoPerfil = {
+        ...perfil,
+        objetivo: sel.objetivos[0],
+        objetivos: [...sel.objetivos],
+        nivel: sel.nivel,
+        diasSemana: sel.dias,
+      };
+      btn.disabled = true;
+      btn.textContent = 'Gerando...';
+      try {
+        const novos = gerarTreinos(novoPerfil);
+        await updateDoc(doc(db, 'users', currentUser.uid), { treinos: novos, perfil: novoPerfil });
+        Object.keys(TREINOS).forEach(k => delete TREINOS[k]);
+        Object.assign(TREINOS, novos);
+        userData.treinos = { ...TREINOS };
+        userData.perfil = novoPerfil;
+        overlay.remove();
+        showToast('✅ Novos treinos gerados!');
+        setActiveNav('treinos');
+        renderPage('treinos');
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Gerar treinos';
+        mostrarErro('Erro ao gerar: ' + err.message);
+      }
+    }
+  });
+
+  desenhar();
+}
+
 function abrirEditorTreinos() {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
@@ -1470,21 +1611,9 @@ function renderizarEditorTreinos(overlay) {
     abrirEditorBuilder(null);
   });
 
-  overlay.querySelector('#btn-gerar-novamente').addEventListener('click', async () => {
-    if (!confirm('Isso vai substituir TODOS os seus treinos atuais por um conjunto novo, gerado com base no seu perfil. Os treinos atuais serão perdidos. Continuar?')) return;
-    try {
-      const { gerarTreinos } = await import('./treinos-autonomo.js');
-      const novosTreinos = gerarTreinos(userData.perfil || {});
-      await updateDoc(doc(db, 'users', currentUser.uid), { treinos: novosTreinos });
-      Object.keys(TREINOS).forEach(k => delete TREINOS[k]);
-      Object.assign(TREINOS, novosTreinos);
-      userData.treinos = { ...TREINOS };
-      showToast('✅ Novos treinos gerados!');
-      overlay.remove();
-      renderPage('home');
-    } catch (e) {
-      showToast('❌ Erro ao gerar: ' + e.message);
-    }
+  overlay.querySelector('#btn-gerar-novamente').addEventListener('click', () => {
+    overlay.remove();
+    abrirModalGerarTreinos();
   });
 
   overlay.querySelectorAll('.btn-edit-autonomo').forEach(btn => {
